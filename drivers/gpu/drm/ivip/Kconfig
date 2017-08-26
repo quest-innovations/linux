@@ -1,0 +1,13 @@
+config DRM_IVIP
+        tristate "Intel FGPA Video and Image Processing"
+        depends on DRM && OF
+        select DRM_GEM_CMA_HELPER
+        select DRM_KMS_HELPER
+        select DRM_KMS_FB_HELPER
+        select DRM_KMS_CMA_HELPER
+        help
+            Choose this option if you have a Intel FPGA Arria 10 system
+            and above with a Display Port IP. This does not support legacy
+            Intel FPGA Cyclone V display port. Currently only single frame
+            buffer is supported. Note that ACPI and X_86 architecture is yet
+            to be supported.If M is selected the module would be called ivip.
