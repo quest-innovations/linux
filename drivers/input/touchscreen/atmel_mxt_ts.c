@@ -3148,7 +3148,10 @@ static int mxt_probe(struct i2c_client *client, const struct i2c_device_id *id)
 					  pdata->irqflags | IRQF_ONESHOT,
 					  client->name, data);
 	if (error) {
-		dev_err(&client->dev, "Failed to register interrupt\n");
+		dev_err(&client->dev, "Failed to register interrupt, error is: %d\n",error);
+		dev_err(&client->dev, "client->irq is: %d\n",client->irq);
+		dev_err(&client->dev, "pdata->irqflags is: %d\n",pdata->irqflags);
+		dev_err(&client->dev, "pdata->irqflags is: %s\n",client->name);
 		return error;
 	}
 

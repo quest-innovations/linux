@@ -305,6 +305,7 @@ static int altera_gpio_probe(struct platform_device *pdev)
 	}
 	altera_gc->interrupt_trigger = reg;
 
+	dev_notice(&pdev->dev, "Start gpiochip_irqchip_add\n");
 	ret = gpiochip_irqchip_add(&altera_gc->mmchip.gc, &altera_irq_chip, 0,
 		handle_bad_irq, IRQ_TYPE_NONE);
 
@@ -313,6 +314,7 @@ static int altera_gpio_probe(struct platform_device *pdev)
 		goto teardown;
 	}
 
+	dev_notice(&pdev->dev, "Start gpiochip_set_chained_irqchip\n");
 	gpiochip_set_chained_irqchip(&altera_gc->mmchip.gc,
 		&altera_irq_chip,
 		altera_gc->mapped_irq,
@@ -321,6 +323,7 @@ static int altera_gpio_probe(struct platform_device *pdev)
 		altera_gpio_irq_edge_handler);
 
 skip_irq:
+	dev_notice(&pdev->dev, "End altera_gpio_probe\n");
 	return 0;
 teardown:
 	of_mm_gpiochip_remove(&altera_gc->mmchip);

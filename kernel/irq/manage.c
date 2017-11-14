@@ -1722,7 +1722,7 @@ int request_threaded_irq(unsigned int irq, irq_handler_t handler,
 
 	if (irq == IRQ_NOTCONNECTED)
 		return -ENOTCONN;
-
+	printk("request_threaded_irq, irq is: %d",irq);
 	/*
 	 * Sanity-check: shared interrupts must pass in a real dev-ID,
 	 * otherwise we'll have trouble later trying to figure out
@@ -1735,19 +1735,31 @@ int request_threaded_irq(unsigned int irq, irq_handler_t handler,
 	if (((irqflags & IRQF_SHARED) && !dev_id) ||
 	    (!(irqflags & IRQF_SHARED) && (irqflags & IRQF_COND_SUSPEND)) ||
 	    ((irqflags & IRQF_NO_SUSPEND) && (irqflags & IRQF_COND_SUSPEND)))
-		return -EINVAL;
+		{
+			printk("request_threaded_irq, error check flags");
+			return -EINVAL;
+		}
 
 	desc = irq_to_desc(irq);
 	if (!desc)
-		return -EINVAL;
+		{
+			printk("request_threaded_irq, error irq_to_desc");
+			return -EINVAL;
+		}
 
 	if (!irq_settings_can_request(desc) ||
 	    WARN_ON(irq_settings_is_per_cpu_devid(desc)))
-		return -EINVAL;
+		{
+			printk("request_threaded_irq, error irq_settings_is_per_cpu_devid");
+			return -EINVAL;
+		}
 
 	if (!handler) {
 		if (!thread_fn)
-			return -EINVAL;
+			{
+				printk("request_threaded_irq, error not thread_fn");
+				return -EINVAL;
+			}
 		handler = irq_default_primary_handler;
 	}
 

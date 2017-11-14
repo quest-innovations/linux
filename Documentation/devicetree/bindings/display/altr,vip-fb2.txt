@@ -1,0 +1,74 @@
+Intel Video and Image Processing(VIP) Frame Buffer II bindings
+
+Supported hardware: Intel FPGA SoC Arria10 and above with display port IP
+
+The Video Frame Buffer II in Video Image Processing (VIP) suite is an IP core
+that interfaces between system memory and Avalon-ST video ports. The IP core
+can be configured to support the memory reader (from memory to Avalon-ST)
+and/or memory writer (from Avalon-ST to memory) interfaces.
+
+More information the FPGA video IP component can be acquired from
+https://www.altera.com/content/dam/altera-www/global/en_US/pdfs\
+/literature/ug/ug_vip.pdf
+
+DT-Bindings:
+=============
+Required properties:
+----------------------------
+- compatible: "altr,vip-frame-buffer-2.0"
+- reg: Physical base address and length of the framebuffer controller's
+	registers.
+- altr,max-width: The maximum width of the framebuffer in pixels.
+- altr,max-height: The maximum height of the framebuffer in pixels.
+- altr,mem-port-width = the bus width of the avalon master port
+	on the frame reader
+
+Connections between the Frame Buffer II and other video IP cores in the system
+are modelled using the OF graph DT bindings. The Frame Buffer II node has up
+to two OF graph ports. When the memory writer interface is enabled, port 0
+maps to the Avalon-ST Input (din) port. When the memory reader interface is
+enabled, port 1 maps to the Avalon-ST Output (dout) port.
+
+The encoder is built into the FPGA HW design and therefore would not
+be accessible from the DDR.
+
+		Port 0				Port1
+---------------------------------------------------------
+ARRIA10 AVALON_ST (DIN)		AVALON_ST (DOUT)
+
+Example:
+----------------------------
+
+           +------------------------------+
+           |        FPGA                  |    +------------+
+           +---------+ +--------------+   |    |  DP        |
++-----+    |  VIP    | | DP           |   +---->  Connector |
+|     |    |  Frame  | | Controller   |   |    |            |
+| D   +---->  Buffer | +--------------+   |    +------------+
+| D   |    |         | +--------------+   |
+| R   |    |         | | DP           |   |
+|     |    +---------+ | Encoder      |   |
+|     |    |           +--------------+   |
++-----+    +------------------------------+
+
+
+framebuffer@100000280 {
+        compatible = "altr,vip-frame-buffer-2.0";
+        reg = <0x00000001 0x00000280 0x00000040>;
+        altr,max-width = <1280>;
+        altr,max-height = <720>;
+        altr,mem-port-width = <128>;
+
+        ports {
+                #address-cells = <1>;
+                #size-cells = <0>;
+
+                port@1 {
+                        reg = <1>;
+                        fb_output: endpoint {
+                                remote-endpoint = <&dp_encoder_input>;
+                        };
+                };
+        };
+};
+
