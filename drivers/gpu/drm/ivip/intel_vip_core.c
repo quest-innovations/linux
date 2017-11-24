@@ -104,6 +104,7 @@ int intelvipfb_probe(struct device *dev)
 	struct intelvipfb_priv *fbpriv = dev_get_drvdata(dev);
 	struct drm_connector *connector;
 	u32 formats[] = {DRM_FORMAT_XRGB8888};
+	u64 format_modifiers[] = {DRM_FORMAT_MOD_INVALID};
 
 	drm = fbpriv->drm;
 
@@ -119,7 +120,7 @@ int intelvipfb_probe(struct device *dev)
 
 	retval = drm_simple_display_pipe_init(drm, &fbpriv->pipe,
 			&fbpriv_funcs, formats,
-			ARRAY_SIZE(formats), connector);
+			ARRAY_SIZE(formats), format_modifiers, connector);
 	if (retval < 0) {
 		dev_err(drm->dev, "Cannot setup simple display pipe\n");
 		goto err_mode_config;

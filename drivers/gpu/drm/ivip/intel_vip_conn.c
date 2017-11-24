@@ -41,7 +41,6 @@ static void intelvipfb_drm_connector_destroy(struct drm_connector *connector)
 }
 
 static const struct drm_connector_funcs intelvipfb_drm_connector_funcs = {
-	.dpms = drm_atomic_helper_connector_dpms,
 	.reset = drm_atomic_helper_connector_reset,
 	.detect = intelvipfb_drm_connector_detect,
 	.fill_modes = drm_helper_probe_single_connector_modes,
