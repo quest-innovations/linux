@@ -1,0 +1,173 @@
+/*
+ *  Copyright (C) 2013 Steffen Trumtrar <s.trumtrar@pengutronix.de>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/dts-v1/;
+#include "socfpga_cyclone5_doloris_base.dtsi"
+#include <dt-bindings/interrupt-controller/irq.h>
+
+/ {
+	model = "Custom project Quest Doloris";
+	compatible = "altr,socfpga-cyclone5", "altr,socfpga";
+
+	chosen {
+		bootargs = "console=ttyS0,115200";
+	};
+
+	memory {
+		name = "memory";
+		device_type = "memory";
+		reg = <0x0 0x40000000>; /* 1GB */
+	};
+
+	aliases {
+		/* this allow the ethaddr uboot environmnet variable contents
+		 * to be added to the gmac1 device tree blob.
+		 */
+		ethernet0 = &gmac1;
+	};
+
+
+	panel_0: panel {
+		compatible = "ortustech,com43h4m85ulc";
+	//	compatible = "innolux,g121x1-l03";
+	//	compatible = "edt,et057090dhu";
+		power-supply = <&regulator_3_3v>;
+	};
+
+	regulator_3_3v: vcc3p3-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "VCC3P3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+};
+
+&fpga_bridge1{
+	ranges = <0x00000000 0x000044c0 0xc00044c0 0x00000040>,
+		<0x00000000 0x00004480 0xc0004480 0x00000040>,
+		<0x00000000 0x00000000 0xc0000000 0x00004000>,
+		<0x00000000 0x00004440 0xc0004440 0x00000040>,
+		<0x00000000 0x00004400 0xc0004400 0x00000040>,
+		<0x00000000 0x00004500 0xc0004500 0x00000010>,
+		<0x00000000 0x00004000 0xc0004000 0x00000400>;
+};
+
+&gmac1 {
+	status = "okay";
+	phy-mode = "rgmii";
+
+	rxd0-skew-ps = <0>;
+	rxd1-skew-ps = <0>;
+	rxd2-skew-ps = <0>;
+	rxd3-skew-ps = <0>;
+	txen-skew-ps = <0>;
+	txc-skew-ps = <2600>;
+	rxdv-skew-ps = <0>;
+	rxc-skew-ps = <2000>;
+};
+
+&mmc0 {
+	vmmc-supply = <&regulator_3_3v>;
+	vqmmc-supply = <&regulator_3_3v>;
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+};
+
+&qspi {
+	status = "disabled";
+
+	flash0: n25q00@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "n25q00";
+		reg = <0>;
+		spi-max-frequency = <100000000>;
+		cdns,page-size = <256>;
+		cdns,block-size = <16>;
+		m25p,fast-read;
+		cdns,read-delay = <4>;
+		cdns,tshsl-ns = <50>;
+		cdns,tsd2d-ns = <50>;
+		cdns,tchsh-ns = <4>;
+		cdns,tslch-ns = <4>;
+
+		part0: partition@0 {
+			label = "Flash 0 Raw Data";
+			reg = < 0x00000000 0x01000000 >;
+		};
+
+		part1: partition@800000 {
+			label = "Flash 1 jffs2 Filesystem";
+			reg = < 0x01000000 0x03000000 >;
+		};
+	};
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	touch@4a {
+		compatible = "atmel,maxtouch";
+		reg = <0x4a>;
+//		interrupt-parent = <&gpio4>;
+//		interrupts = <0>;
+		interrupt-parent = <&portb>;
+		interrupts = <22 IRQ_TYPE_EDGE_FALLING>;
+//		interrupt-parent = <&portc>;
+//		interrupts = <3 IRQ_TYPE_EDGE_RISING>;
+	};
+	isl12057: isl12057@6F {
+		compatible = "isil,isl12022";
+		reg = <0x6F>;
+	};
+
+};
+
+&spi0 {
+	status = "disabled";
+	spidev@0 {
+		compatible = "spidev";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&fb_0{
+	status = "okay";
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		
+		port@1 {
+			reg = <1>;
+			fb_output: endpoint {
+			        remote-endpoint = <&panel_0>;
+			};
+		};
+	};
+};
+
