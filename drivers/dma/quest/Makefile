@@ -1,0 +1,1 @@
+obj-$(CONFIG_QUEST_DMA) += quest_dma_ctrl.o
