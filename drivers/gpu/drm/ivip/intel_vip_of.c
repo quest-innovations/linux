@@ -113,7 +113,7 @@ static int intelvipfb_drm_setup(struct device *dev,
 		return -ENODEV;
 	}
 
-	drm->mode_config.min_width = 640;
+	drm->mode_config.min_width = 480;
 	drm->mode_config.min_height = 480;
 	drm->mode_config.max_width = max_w;
 	drm->mode_config.max_height = max_h;
