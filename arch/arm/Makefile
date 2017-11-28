@@ -304,7 +304,7 @@ boot := arch/arm/boot
 ifeq ($(CONFIG_XIP_KERNEL),y)
 KBUILD_IMAGE := $(boot)/xipImage
 else
-KBUILD_IMAGE := $(boot)/zImage
+KBUILD_IMAGE := $(boot)/uImage
 endif
 
 # Build the DT binary blobs if we have OF configured
