@@ -223,7 +223,7 @@ export DEB_MAINT_PARAMS="\$*"
 # Tell initramfs builder whether it's wanted
 export INITRD=$want_initrd
 
-cp -f $installed_image_path /boot/zImage
+cp -f $installed_image_path /boot/uImage
 
 test -d $debhookdir/$script.d && run-parts --arg="$version" --arg="/$installed_image_path" $debhookdir/$script.d
 exit 0
