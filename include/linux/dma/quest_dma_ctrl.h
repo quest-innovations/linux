@@ -37,5 +37,8 @@ typedef struct
 #define QDMA_GRAB_IMG _IOR('q', 8, qdma_buf_arg_t *)
 
 #define QDMA_SENSOR_DMA_SETREG _IOW('q', 9, qdma_reg_arg_t *)
+#define QDMA_SENSOR_DMA_GETREG _IOR('q', 10, qdma_reg_arg_t *)
+
+#define QDMA_DRIVE_GRABBING _IO('q', 11)
 
 #endif
