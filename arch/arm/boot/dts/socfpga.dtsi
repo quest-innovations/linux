@@ -16,6 +16,7 @@
  */
 
 #include <dt-bindings/reset/altr,rst-mgr.h>
+#include <dt-bindings/interrupt-controller/irq.h>
 
 / {
 	#address-cells = <1>;
@@ -536,11 +537,32 @@
 			clocks = <&l4_main_clk>;
 		};
 
-		fpga_bridge1: fpga_bridge@ff500000 {
+		fpga_bridge1: fpga_bridge@0xc0000000 {
 			compatible = "altr,socfpga-hps2fpga-bridge";
-			reg = <0xff500000 0x10000>;
+			reg = <0xc0000000 0x10000>;
 			resets = <&rst HPS2FPGA_RESET>;
 			clocks = <&l4_main_clk>;
+			#address-cells = <2>;
+			#size-cells = <1>;
+			
+
+			fb_0: framebuffer@0x000004480 {
+				compatible = "altr,vip-frame-buffer-2.0";
+				reg = <0x00000000 0x000004480 0x00000040>;
+				altr,max-width = <480>;
+				altr,max-height = <800>;
+				altr,mem-port-width = <128>;				
+				status = "disabled";
+			};
+			clink_to_av_master_0: quest_dma_ctrl@0x000004400 {
+				compatible = "quest,quest-dma-ctrl-1.00.a";
+				reg = <0x00000000 0x00004400 0x00000040>;
+				clocks = <&h2f_user0_clk &h2f_user0_clk>;
+				clock-names = "clock_write", "clock_slave";
+				interrupt-parent = <&intc>;
+				interrupts = <0 42 IRQ_TYPE_EDGE_RISING>;
+				status = "disabled";
+			};
 		};
 
 		fpgamgr0: fpgamgr@ff706000 {
@@ -869,7 +891,8 @@
 			interrupts = <0 162 4>;
 			reg-shift = <2>;
 			reg-io-width = <4>;
-			clocks = <&l4_sp_clk>;
+			//clocks = <&l4_sp_clk>;
+			clock-frequency = <100000000>;
 			dmas = <&pdma 28>,
 			       <&pdma 29>;
 			dma-names = "tx", "rx";

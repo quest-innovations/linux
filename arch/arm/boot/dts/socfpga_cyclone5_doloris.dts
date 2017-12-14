@@ -16,7 +16,7 @@
  */
 
 /dts-v1/;
-#include "socfpga_cyclone5_doloris_base.dtsi"
+#include "socfpga_cyclone5.dtsi"
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
@@ -39,6 +39,7 @@
 		 */
 		ethernet0 = &gmac1;
 	};
+
 
 
 	panel_0: panel {
@@ -135,8 +136,8 @@
 		reg = <0x4a>;
 //		interrupt-parent = <&gpio4>;
 //		interrupts = <0>;
-		interrupt-parent = <&portb>;
-		interrupts = <22 IRQ_TYPE_EDGE_FALLING>;
+//		interrupt-parent = <&portb>;
+//		interrupts = <22 IRQ_TYPE_EDGE_FALLING>;
 //		interrupt-parent = <&portc>;
 //		interrupts = <3 IRQ_TYPE_EDGE_RISING>;
 	};
@@ -171,3 +172,12 @@
 	};
 };
 
+
+&clink_to_av_master_0 {
+	compatible = "quest,quest-dma-ctrl-1.00.a";
+	dmas = <&pdma 0>;
+	dma-names = "pdma";
+	interrupt-parent = <&portc>;
+	interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+	status = "okay";
+};
