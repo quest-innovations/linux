@@ -157,7 +157,7 @@ static volatile struct quest_cam_dma qcdma;
 static u32 sensor_dma_getreg(SensorDmaRegs offset)
 {
     u32 test = readl(qcdma.sensor_dma_base + (offset * 4));
-    //pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)qcdma.sensor_dma_base, (u32)offset, test);
+    pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)qcdma.sensor_dma_base, (u32)offset, test);
 
     return test;
 }
@@ -170,7 +170,8 @@ static u32 sensor_dma_getreg(SensorDmaRegs offset)
 static void sensor_dma_setreg(SensorDmaRegs offset, u32 value)
 {
     writel(value, qcdma.sensor_dma_base + (offset * 4));
-    //pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)qcdma.sensor_dma_base, (u32)offset, value);
+    pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)qcdma.sensor_dma_base, (u32)offset, value);
+    udelay(500);
 }
 
 /**
@@ -218,12 +219,23 @@ static void dmatest_init_srcs_quest(u8 **bufs, unsigned int start, unsigned int 
                 for (i = 0; i < start; i++)
                         buf[i] = PATTERN_SRC;
                 for ( ; i < stop; i++)
-                        buf[i] = PATTERN_SRC | PATTERN_COPY
-                                | (~i & PATTERN_COUNT_MASK);
+                        buf[i] = PATTERN_COPY;
                 for ( ; i < size; i++)
                         buf[i] = PATTERN_SRC;
                 buf++;
         }
+}
+
+static void dmatest_init_srcs_quest_single(u8 *buf, unsigned int start, unsigned int stop, unsigned int size)
+{
+        unsigned int i;
+
+        for (i = 0; i < start; i++)
+                buf[i] = PATTERN_SRC;
+        for ( ; i < stop; i++)
+                buf[i] = PATTERN_COPY;
+        for ( ; i < size; i++)
+                buf[i] = PATTERN_SRC;
 }
 
 static bool dmatest_check_srcs_quest(u8 *buf, unsigned int start, unsigned int stop, unsigned int size)
@@ -317,7 +329,7 @@ static int cam_dma_init(unsigned int bufs_size, unsigned int bufs_cnt)
         qcdma.bufs_user[i] = qcdma.bufs[i] + qcdma.check_range;
         qcdma.bufs_raw[i] = qcdma.dma_handles[i] + qcdma.check_range;
 
-        pr_info("Raw assignment OK %d", qcdma.bufs_raw[i] + qcdma.check_range);
+        pr_info("Raw assignment OK %d", qcdma.bufs_raw[i]);
     }
 
     qcdma.bufs[i+1] = NULL;
@@ -526,7 +538,9 @@ static int driveGrabbing(void)
 
             // Write next phys buffer ptr in sensor DMA
 
-            pr_info("    %s Writing next phys buffer %d", __func__, qcdma.bufs_raw[nextWrite]);
+            dmatest_init_srcs_quest_single(qcdma.bufs[nextWrite], qcdma.check_range, qcdma.image_size_bytes, qcdma.bufs_size);
+
+            pr_info("    %s Writing next phys buffer %d lazy begin(-16B): %d, lazy end (-16B): %d", __func__, qcdma.bufs_raw[nextWrite], qcdma.bufs_raw[nextWrite] - 16, qcdma.bufs_raw[nextWrite] + qcdma.image_size_bytes - 16);
             sensor_dma_setreg(Pointer0, qcdma.bufs_raw[nextWrite]);
 
             // Acknowledge IRQ
