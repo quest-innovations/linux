@@ -28,23 +28,6 @@
 			clocks = <&l4_main_clk>;
 			#address-cells = <2>;
 			#size-cells = <1>;
-			
-
-			fb_0: framebuffer@0x000001040 {
-				compatible = "altr,vip-frame-buffer-2.0";
-				reg = <0x00000000 0x00001040 0x00000040>;
-				altr,max-width = <480>;
-				altr,max-height = <800>;
-				altr,mem-port-width = <128>;
-				
-				status = "disabled";
-			};
-			clink_to_av_master_0: unknown@0x000004400 {
-				compatible = "unknown,unknown-1.0";
-				reg = <0x00000000 0x00004400 0x00000040>;
-				clocks = <&h2f_user0_clk &h2f_user0_clk>;
-				clock-names = "clock_write", "clock_slave";
-			};
 		};
 
 	};
