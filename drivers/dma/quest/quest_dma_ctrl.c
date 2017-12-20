@@ -113,6 +113,7 @@ struct quest_cam_dma {
         bool frame_skipped;
         bool frame_ready;
         bool stop_grabbing;
+        bool grabbing;
         int irqn;
         void __iomem *sensor_dma_base;
 };
@@ -157,7 +158,7 @@ static volatile struct quest_cam_dma qcdma;
 static u32 sensor_dma_getreg(SensorDmaRegs offset)
 {
     u32 test = readl(qcdma.sensor_dma_base + (offset * 4));
-    pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)qcdma.sensor_dma_base, (u32)offset, test);
+    //pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)qcdma.sensor_dma_base, (u32)offset, test);
 
     return test;
 }
@@ -170,7 +171,7 @@ static u32 sensor_dma_getreg(SensorDmaRegs offset)
 static void sensor_dma_setreg(SensorDmaRegs offset, u32 value)
 {
     writel(value, qcdma.sensor_dma_base + (offset * 4));
-    pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)qcdma.sensor_dma_base, (u32)offset, value);
+    //pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)qcdma.sensor_dma_base, (u32)offset, value);
     udelay(500);
 }
 
@@ -241,11 +242,15 @@ static void dmatest_init_srcs_quest_single(u8 *buf, unsigned int start, unsigned
 static bool dmatest_check_srcs_quest(u8 *buf, unsigned int start, unsigned int stop, unsigned int size)
 {
     unsigned int i;
+    unsigned int fault = 0;
 
     for (i = 0; i < start; i++)
     {
         if(buf[i] != PATTERN_SRC)
-            return false;
+        {
+            pr_info("i:%d d:%d", i, buf[i]);
+            fault = 1;
+        }
     }
 
     i = stop;
@@ -253,7 +258,18 @@ static bool dmatest_check_srcs_quest(u8 *buf, unsigned int start, unsigned int s
     for ( ; i < size; i++)
     {
         if(buf[i] != PATTERN_SRC)
-            return false;
+        {
+            if(fault == 1)
+                pr_info("\n");
+
+            pr_info("i:%d d:%d", i, buf[i]);
+        }
+    }
+
+    if(fault == 1)
+    {
+        pr_info("\n");
+        return false;
     }
 
     return true;
@@ -372,7 +388,7 @@ static int cam_dma_grab_img(qdma_buf_arg_t *buf)
     if(qcdma.last_read == qcdma.last_write)
     {
         int result;
-        printk("GW   - Waiting for next image");
+        //--printk("GW   - Waiting for next image");
         result = wait_event_interruptible(frame_wait, qcdma.frame_ready || qcdma.stop_grabbing);
 
         if(qcdma.stop_grabbing)
@@ -384,7 +400,7 @@ static int cam_dma_grab_img(qdma_buf_arg_t *buf)
         }
         else if(qcdma.frame_ready)
         {
-            printk("DW   - Done with waiting for frame ready!");
+            //--printk("DW   - Done with waiting for frame ready!");
             qcdma.frame_ready = false; // Reset frame ready signal
         }
         else
@@ -395,7 +411,7 @@ static int cam_dma_grab_img(qdma_buf_arg_t *buf)
     }
     else
     {
-        printk("    Catching up on images lr: %d lw: %d", qcdma.last_read, qcdma.last_write);
+        //--printk("    Catching up on images lr: %d lw: %d", qcdma.last_read, qcdma.last_write);
 
         if(qcdma.frame_ready) // If frame ready was set while not waiting for a frame, reset the flag
             qcdma.frame_ready = false;
@@ -419,7 +435,7 @@ static int cam_dma_grab_img(qdma_buf_arg_t *buf)
     if(!dmatest_check_srcs_quest(qcdma.bufs[qcdma.last_read], qcdma.check_range, qcdma.image_size_bytes + qcdma.check_range, qcdma.bufs_size))
         pr_info("Buffer overrun!");
 
-    printk("GRAB - Last read: %d > %d Last write: %d", prevLastRead, qcdma.last_read, qcdma.last_write);
+    //--printk("GRAB - Last read: %d > %d Last write: %d", prevLastRead, qcdma.last_read, qcdma.last_write);
 
     if (copy_to_user(buf->buf_dst, qcdma.bufs_user[qcdma.last_read], qcdma.image_size_bytes))
     {
@@ -494,7 +510,7 @@ static irqreturn_t test_interrupt(int irq, void *dev_id)
 static int driveGrabbing(void)
 {
     u32 control;
-    u32 prevLastWrite = qcdma.last_write;
+    u32 prevLastWrite;
     u32 nextWrite;
 
     if(qcdma.bufs_cnt == 0) // Cannot grab if no buffers are set
@@ -505,11 +521,13 @@ static int driveGrabbing(void)
     {
         if(sensor_dma_getreg(Status) & ImageDone)
         {
-            u32 last_write_chk_buf = qcdma.last_write + 2; // + 2 to prevent race condition in read
+            prevLastWrite = qcdma.last_write;
 
             // Check if skipping a frame read is required
+            u32 last_write_chk_buf = qcdma.last_write + 2; // + 2 to prevent race condition in read
+
             if(last_write_chk_buf >= qcdma.bufs_cnt)
-                last_write_chk_buf -= qcdma.bufs_cnt;
+                last_write_chk_buf -= (qcdma.bufs_cnt - 1);
             if(last_write_chk_buf == qcdma.last_read)
             {
                 pr_info("%s Skipping frame", __func__);
@@ -520,27 +538,27 @@ static int driveGrabbing(void)
                     ++qcdma.last_read;
             }
 
-            // Flag buffer recieved
-            if(qcdma.last_write == qcdma.last_read) // If read if waiting for a frame, signal it
-                qcdma.frame_ready = true;
-
             if(qcdma.last_write == qcdma.bufs_cnt - 1)
                 qcdma.last_write = 0;
             else
                 ++qcdma.last_write;
+
+            // Flag buffer recieved AFTER increasing counter to ensure if read is waiting for frame we can interrupt it
+            if(prevLastWrite == qcdma.last_read) // If read if waiting for a frame, signal it
+                qcdma.frame_ready = true;
 
             if(qcdma.last_write == qcdma.bufs_cnt - 1)
                 nextWrite = 0;
             else
                 nextWrite = qcdma.last_write + 1;
 
-            printk("IMG  - LR: %d LW: %d > %d Next: %d", qcdma.last_read, prevLastWrite, qcdma.last_write, nextWrite);
+            //----printk("IMG  - LR: %d LW: %d > %d Next: %d", qcdma.last_read, prevLastWrite, qcdma.last_write, nextWrite);
 
             // Write next phys buffer ptr in sensor DMA
 
-            dmatest_init_srcs_quest_single(qcdma.bufs[nextWrite], qcdma.check_range, qcdma.image_size_bytes, qcdma.bufs_size);
+            //dmatest_init_srcs_quest_single(qcdma.bufs[nextWrite], qcdma.check_range, qcdma.image_size_bytes, qcdma.bufs_size);
 
-            pr_info("    %s Writing next phys buffer %d lazy begin(-16B): %d, lazy end (-16B): %d", __func__, qcdma.bufs_raw[nextWrite], qcdma.bufs_raw[nextWrite] - 16, qcdma.bufs_raw[nextWrite] + qcdma.image_size_bytes - 16);
+            //--pr_info("    %s Writing next phys buffer %d lazy begin(-16B): %d, lazy end (-16B): %d", __func__, qcdma.bufs_raw[nextWrite], qcdma.bufs_raw[nextWrite] - 16, qcdma.bufs_raw[nextWrite] + qcdma.image_size_bytes - 16);
             sensor_dma_setreg(Pointer0, qcdma.bufs_raw[nextWrite]);
 
             // Acknowledge IRQ
@@ -566,11 +584,15 @@ static int driveGrabbing(void)
         }
         else
         {
-            usleep_range(10, 200);
+            usleep_range(100, 200);
         }
     }
 
+    wake_up_interruptible(&frame_wait); // Awake process to return
+    msleep(10); // Wait for grab function to see the stop flag before resetting it
+
     qcdma.stop_grabbing = false;    // Reset stop flag
+    qcdma.grabbing = false;
     pr_info("Stopping drive grabbing");
 
     return 0;
@@ -625,6 +647,21 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
         case QDMA_START_GRAB:
             {
             u32 control = 0;
+
+            // If not already done, stop any grabbing process
+            //pr_info("Setting stop bit");
+            if(qcdma.grabbing == true)
+            {
+                pr_info("Already grabbing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                return -1;
+            }
+            qcdma.grabbing = true;
+            //wake_up_interruptible(&frame_wait);
+
+            // Sleep some time to be sure stop has been grabbed
+            //msleep(1);
+
+            //qcdma.stop_grabbing = false;
 
             // Set read and write to last buffer so they begin at 0 at a write
             qcdma.last_read = qcdma.bufs_cnt - 1;
@@ -960,6 +997,7 @@ static int quest_dma_ctrl_probe(struct platform_device *pdev)
         qcdma.frame_ready = false;
         qcdma.frame_skipped = false;
         qcdma.stop_grabbing = false;
+        qcdma.grabbing = false;
 
         if ((ret = alloc_chrdev_region(&dev, FIRST_MINOR, MINOR_CNT, "query_ioctl")) < 0)
         {
@@ -1169,7 +1207,7 @@ static struct platform_driver quest_dma_ctrl_driver = {
 
 static int __init questdma_init(void)
 {
-	pr_info("Hello init2.\n");
+        pr_info("Hello init. 20-dec-2017 10:55 \n");
 	return platform_driver_register(&quest_dma_ctrl_driver);
 
 }
