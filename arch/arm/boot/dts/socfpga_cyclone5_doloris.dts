@@ -136,8 +136,8 @@
 		reg = <0x4a>;
 //		interrupt-parent = <&gpio4>;
 //		interrupts = <0>;
-//		interrupt-parent = <&portb>;
-//		interrupts = <22 IRQ_TYPE_EDGE_FALLING>;
+		interrupt-parent = <&portb>;
+		interrupts = <22 IRQ_TYPE_EDGE_FALLING>;
 //		interrupt-parent = <&portc>;
 //		interrupts = <3 IRQ_TYPE_EDGE_RISING>;
 	};
