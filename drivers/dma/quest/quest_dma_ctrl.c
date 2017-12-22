@@ -31,15 +31,6 @@
 
 #include <linux/delay.h>
 
-static unsigned int test_buf_size = 64;
-module_param(test_buf_size, uint, S_IRUGO);
-MODULE_PARM_DESC(test_buf_size, "Size of the memcpy test buffer");
-
-static unsigned int iterations = 5;
-module_param(iterations, uint, S_IRUGO);
-MODULE_PARM_DESC(iterations,
-		"Iterations before stopping test (default: infinite)");
-
 /*
  * Initialization patterns. All bytes in the source buffer has bit 7
  * set, all bytes in the destination buffer has bit 7 cleared.
@@ -118,35 +109,13 @@ struct quest_cam_dma {
         void __iomem *sensor_dma_base;
 };
 
-struct dmatest_slave_thread {
-        struct list_head node;
-	struct task_struct *task;
-	struct dma_chan *tx_chan;
-	u8 **srcs;
-	enum dma_transaction_type type;
-	bool done;
-};
-struct dmatest_chan {
-	struct list_head node;
-	struct dma_chan *chan;
-	struct list_head threads;
-};
-
-/*
- * These are protected by dma_list_mutex since they're only used by
- * the DMA filter function callback
- */
-static DECLARE_WAIT_QUEUE_HEAD(thread_wait);
-static LIST_HEAD(dmatest_channels);
-static unsigned int nr_channels;
-
 static struct device *dev_reg;
 
 static dev_t dev;
 static struct cdev c_dev;
 static struct class *cl;
 
-static volatile struct quest_cam_dma qcdma;
+static struct quest_cam_dma qcdma;
 
 
 /**
@@ -227,6 +196,7 @@ static void dmatest_init_srcs_quest(u8 **bufs, unsigned int start, unsigned int 
         }
 }
 
+/*
 static void dmatest_init_srcs_quest_single(u8 *buf, unsigned int start, unsigned int stop, unsigned int size)
 {
         unsigned int i;
@@ -237,7 +207,7 @@ static void dmatest_init_srcs_quest_single(u8 *buf, unsigned int start, unsigned
                 buf[i] = PATTERN_COPY;
         for ( ; i < size; i++)
                 buf[i] = PATTERN_SRC;
-}
+}*/
 
 static bool dmatest_check_srcs_quest(u8 *buf, unsigned int start, unsigned int stop, unsigned int size)
 {
@@ -273,23 +243,6 @@ static bool dmatest_check_srcs_quest(u8 *buf, unsigned int start, unsigned int s
     }
 
     return true;
-}
-
-static void dmatest_init_srcs(u8 **bufs, unsigned int start, unsigned int len)
-{
-        unsigned int i;
-        u8 *buf;
-
-        for (; (buf = *bufs); bufs++) {
-                for (i = 0; i < start; i++)
-                        buf[i] = PATTERN_SRC | (~i & PATTERN_COUNT_MASK);
-                for ( ; i < start + len; i++)
-                        buf[i] = PATTERN_SRC | PATTERN_COPY
-                                | (~i & PATTERN_COUNT_MASK);
-                for ( ; i < test_buf_size; i++)
-                        buf[i] = PATTERN_SRC | (~i & PATTERN_COUNT_MASK);
-                buf++;
-        }
 }
 
 /**
@@ -359,7 +312,7 @@ static int cam_dma_init(unsigned int bufs_size, unsigned int bufs_cnt)
 
     dmatest_init_srcs_quest(qcdma.bufs, qcdma.check_range, qcdma.image_size_bytes + qcdma.check_range, qcdma.bufs_size);
 
-    for( ; j < 5; ++j)
+    for( ; j < qcdma.bufs_cnt; ++j)
     {
         if(dmatest_check_srcs_quest(qcdma.bufs[j], qcdma.check_range, qcdma.image_size_bytes + qcdma.check_range, qcdma.bufs_size))
             pr_info("Buffer overrun check OK");
@@ -383,8 +336,6 @@ static DECLARE_WAIT_QUEUE_HEAD(frame_wait);
 
 static int cam_dma_grab_img(qdma_buf_arg_t *buf)
 {
-    u32 prevLastRead = qcdma.last_read;
-
     if(qcdma.last_read == qcdma.last_write)
     {
         int result;
@@ -432,8 +383,8 @@ static int cam_dma_grab_img(qdma_buf_arg_t *buf)
         qcdma.frame_skipped = false; // Reset skip bit
     }
 
-    if(!dmatest_check_srcs_quest(qcdma.bufs[qcdma.last_read], qcdma.check_range, qcdma.image_size_bytes + qcdma.check_range, qcdma.bufs_size))
-        pr_info("Buffer overrun!");
+    //if(!dmatest_check_srcs_quest(qcdma.bufs[qcdma.last_read], qcdma.check_range, qcdma.image_size_bytes + qcdma.check_range, qcdma.bufs_size))
+        //pr_info("Buffer overrun!");
 
     //--printk("GRAB - Last read: %d > %d Last write: %d", prevLastRead, qcdma.last_read, qcdma.last_write);
 
@@ -454,6 +405,7 @@ static int my_close(struct inode *i, struct file *f)
     return 0;
 }
 
+/*
 static irqreturn_t test_interrupt(int irq, void *dev_id)
 {
     // Check if skipping a frame read is required
@@ -505,13 +457,14 @@ static irqreturn_t test_interrupt(int irq, void *dev_id)
     wake_up_interruptible(&frame_wait);
 
     return IRQ_HANDLED;
-}
+}*/
 
 static int driveGrabbing(void)
 {
     u32 control;
     u32 prevLastWrite;
     u32 nextWrite;
+    u32 last_write_chk_buf ;
 
     if(qcdma.bufs_cnt == 0) // Cannot grab if no buffers are set
         return -1;
@@ -521,10 +474,12 @@ static int driveGrabbing(void)
     {
         if(sensor_dma_getreg(Status) & ImageDone)
         {
+            pr_info("Image received! \n");
+
             prevLastWrite = qcdma.last_write;
 
             // Check if skipping a frame read is required
-            u32 last_write_chk_buf = qcdma.last_write + 2; // + 2 to prevent race condition in read
+            last_write_chk_buf = qcdma.last_write + 2; // + 2 to prevent race condition in read
 
             if(last_write_chk_buf >= qcdma.bufs_cnt)
                 last_write_chk_buf -= (qcdma.bufs_cnt - 1);
@@ -600,39 +555,12 @@ static int driveGrabbing(void)
 
 static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
 {
-    //query_arg_t q;
     qdma_alloc_arg_t al;
     qdma_buf_arg_t buf;
     qdma_reg_arg_t reg;
 
     switch (cmd)
     {
-        /*case QUERY_GET_VARIABLES:
-            q.status = status;
-            q.dignity = dignity;
-            q.ego = ego;
-            if (copy_to_user((query_arg_t *)arg, &q, sizeof(query_arg_t)))
-            {
-                return -EACCES;
-            }
-            break;
-
-        case QUERY_CLR_VARIABLES:
-            status = 0;
-            dignity = 0;
-            ego = 0;
-            break;
-
-        case QUERY_SET_VARIABLES:
-            if (copy_from_user(&q, (query_arg_t *)arg, sizeof(query_arg_t)))
-            {
-                return -EACCES;
-            }
-            status = q.status;
-            dignity = q.dignity;
-            ego = q.ego;
-            break;*/
-
         case QDMA_ALLOC_MEM:
             if (copy_from_user(&al, (qdma_alloc_arg_t *)arg, sizeof(qdma_alloc_arg_t)))
             {
@@ -652,7 +580,14 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
             //pr_info("Setting stop bit");
             if(qcdma.grabbing == true)
             {
-                pr_info("Already grabbing!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                qcdma.stop_grabbing = true;
+                wake_up_interruptible(&frame_wait);
+
+                usleep_range(100, 100);
+            }
+            if(qcdma.grabbing == true)
+            {
+                pr_info("Stop grabbing failed");
                 return -1;
             }
             qcdma.grabbing = true;
@@ -685,6 +620,7 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
         case QDMA_GRAB_IMG:
             if (copy_from_user(&buf, (qdma_buf_arg_t *)arg, sizeof(qdma_buf_arg_t)))
             {
+                pr_info("Grab - user>kernel data transfer went wrong");
                 return -EACCES;
             }
             return cam_dma_grab_img(&buf);
@@ -722,250 +658,6 @@ static long my_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
     return 0;
 }
 
-/*static void dmatest_cleanup_channel(struct dmatest_chan *dtc)
-{
-	struct dmatest_slave_thread *thread;
-	struct dmatest_slave_thread *_thread;
-	int ret;
-	pr_info("Start dmatest_cleanup_channel\n");
-
-	if(!dtc)
-		pr_info("!dtc\n");
-
-	if(!&dtc->threads)
-		pr_info("!dtc->threads\n");
-
-	if(!(&dtc->threads)->next)
-		pr_info("!(&dtc->threads)->next\n");
-
-	thread = list_entry((&dtc->threads)->next, typeof(*thread), node);
-	if(!thread)
-		pr_info("!thread\n");
-
-	if(!thread->task)
-		pr_info("!(&dtc->threads)->next->task\n");
-
-	list_for_each_entry_safe(thread, _thread, &dtc->threads, node) {
-		ret = kthread_stop(thread->task);
-		pr_debug("dmatest: thread %s exited with status %d\n",
-				thread->task->comm, ret);
-		list_del(&thread->node);
-		put_task_struct(thread->task);
-		kfree(thread);
-	}
-	kfree(dtc);
-}*/
-
-/*static void dmatest_slave_tx_callback(void *completion)
-{
-	pr_info("In the callback, yay!");
-	complete(completion);
-}*/
-
-static int dmatest_slave_func(void *data)
-{
-	struct dmatest_slave_thread	*thread = data;
-	struct dma_chan *tx_chan;
-        //unsigned int src_off, dst_off, len;
-        unsigned int src_off, len;
-	int src_cnt;
-	int bd_cnt = 1;
-	enum dma_ctrl_flags flags;
-        //struct completion tx_cmp;
-        //enum dma_status status;
-        //dma_cookie_t tx_cookie;
-	int i;
-        //const char *thread_name = current->comm;
-
-	tx_chan = thread->tx_chan;
-	src_cnt = bd_cnt;
-
-	// Allocate mem for stuff to transfer
-	pr_info("Allocate stuff");
-	thread->srcs = kcalloc(src_cnt+1, sizeof(u8 *), GFP_KERNEL);
-	if (!thread->srcs)
-		goto err_dsts;	
-
-	thread->srcs[0] = kmalloc(test_buf_size, GFP_KERNEL);
-	if (!thread->srcs[0])
-		goto err_srcbuf;
-
-	thread->srcs[1] = NULL;
-
-	// Let's play nice today :)
-	set_user_nice(current, 10);
-
-	flags = DMA_CTRL_ACK | DMA_PREP_INTERRUPT;
-
-	{
-	
-	struct dma_device *tx_dev = tx_chan->device;
-	struct dma_async_tx_descriptor *txd = NULL;
-	dma_addr_t dma_srcs[src_cnt];
-
-        //unsigned long tx_tmo = msecs_to_jiffies(30000);
-	u8 align = 0;
-	struct scatterlist tx_sg[bd_cnt];
-
-	pr_info("Alignment stuff");
-	align = tx_dev->copy_align;
-
-	if (1 << align > test_buf_size) {
-		pr_err("%u-byte buffer too small for %d-byte alignment\n",
-			test_buf_size, 1 << align);
-		goto err_dsts;
-	}
-
-	// Put a test pattern in the buffs
-	pr_info("Inserting testpattern");
-	len = test_buf_size;
-	src_off = 0; // We don't scramble the offset to it's 0?
-	dmatest_init_srcs(thread->srcs, 0, len);
-	
-	{
-		u8 *buf = thread->srcs[0] + src_off;
-		dma_srcs[0] = dma_map_single(tx_dev->dev, buf, len,
-						DMA_MEM_TO_DEV);
-	}
-	
-	sg_init_table(tx_sg, bd_cnt);
-
-	sg_dma_address(&tx_sg[0]) = dma_srcs[0];
-	sg_dma_len(&tx_sg[0]) = len;
-
-	pr_info("Preparing slave sg");
-	
-	txd = tx_dev->device_prep_slave_sg(tx_chan, tx_sg, bd_cnt,
-				DMA_MEM_TO_DEV, flags, NULL);
-
-	if(!txd)
-	{
-		pr_err("!txd");
-		goto err_dsts;
-	}
-
-	// Thread stuff callback
-	/*pr_info("Inserting callback");
-	init_completion(&tx_cmp);
-	txd->callback = dmatest_slave_tx_callback;
-	txd->callback_param = &tx_cmp;
-	tx_cookie = txd->tx_submit(txd);
-
-	if(!tx_cookie)
-	{
-		pr_err("No cookies :(");
-		return -1;
-	}
-	
-
-	// Submit dma transaction?
-	
-
-	// Issue pending request
-	pr_info("Issueing pending request");
-	dma_async_issue_pending(tx_chan);
-
-	status = dma_async_is_tx_complete(tx_chan, tx_cookie,
-							NULL, NULL);*/
-
-	pr_info("Things are set up, yay!");	
-
-	// Maybe some verify stuff after dma done?
-
-	}
-	/*while (!kthread_should_stop())
-	{
-		
-	}*/
-
-err_dsts:
-	for (i = 0; thread->srcs[i]; i++)
-		kfree(thread->srcs[i]);
-err_srcbuf:
-	kfree(thread->srcs);
-//err_srcs:
-	//pr_notice("%s: terminating after %u tests, %u failures (status %d)\n",
-	//		thread_name, total_tests, failed_tests, ret);
-
-	pr_info("Thread is done");
-	thread->done = true;
-
-	return 0;
-}
-
-static int dmatest_add_slave_threads(struct dmatest_chan *tx_dtc)
-{
-	struct dmatest_slave_thread *thread;
-	struct dma_chan *tx_chan = tx_dtc->chan;
-	pr_info("Start dmatest_add_slave_threads\n");
-
-	thread = kzalloc(sizeof(struct dmatest_slave_thread), GFP_KERNEL);
-	if (!thread) {
-		pr_warn("dmatest: No memory for slave thread %s\n",
-				dma_chan_name(tx_chan));
-
-	}
-	pr_info("mallock thread done\n");
-
-	thread->tx_chan = tx_chan;
-	thread->type = (enum dma_transaction_type)DMA_SLAVE;
-	smp_wmb();
-	thread->task = kthread_run(dmatest_slave_func, thread, "%s",
-		dma_chan_name(tx_chan));
-	if (IS_ERR(thread->task)) {
-		pr_warn("dmatest: Failed to run thread %s\n",
-				dma_chan_name(tx_chan));
-		kfree(thread);
-		return PTR_ERR(thread->task);
-	}
-
-	/* srcbuf and dstbuf are allocated by the thread itself */
-	get_task_struct(thread->task);
-	list_add_tail(&thread->node, &tx_dtc->threads);
-	pr_info("thread added to list\n");
-
-	/* Added one thread with 2 channels */
-	return 1;
-}
-
-static int dmatest_add_slave_channels(struct dma_chan *tx_chan)
-{
-	struct dmatest_chan *tx_dtc;
-	unsigned int thread_count = 0;
-	pr_info("Start dmatest_add_slave_channels\n");
-
-	tx_dtc = kmalloc(sizeof(struct dmatest_chan), GFP_KERNEL);
-	if (!tx_dtc) {
-		pr_warn("dmatest: No memory for tx %s\n",
-				dma_chan_name(tx_chan));
-		return -ENOMEM;
-	}
-	pr_info("mallock dma_channel done\n");
-
-
-
-	tx_dtc->chan = tx_chan;
-
-	//pr_info("tx channel client count: %d",tx_dtc->chan->client_count);
-	INIT_LIST_HEAD(&tx_dtc->threads);
-
-	dmatest_add_slave_threads(tx_dtc);
-	thread_count += 1;
-
-//	pr_info("dmatest: Started %u threads using %s\n",
-//		thread_count, dma_chan_name(tx_chan));
-
-	list_add_tail(&tx_dtc->node, &dmatest_channels);
-//	list_add_tail(&rx_dtc->node, &dmatest_channels);
-	nr_channels += 1;
-
-//	if (iterations)
-//		wait_event(thread_wait, !is_threaded_test_run(tx_dtc, rx_dtc));
-
-	pr_info("END dmatest_add_slave_channels\n");
-	return 0;
-}
-
 struct file_operations query_fops = {
  open:   my_open,
  unlocked_ioctl: my_ioctl,
@@ -975,17 +667,13 @@ struct file_operations query_fops = {
 static int quest_dma_ctrl_probe(struct platform_device *pdev)
 {
         // DMA stuff
-	struct dma_chan *chan;
-	int err;
-        const char *test = 0;
-        //struct device_node * node = 0;
         int ret;
         struct device *dev_ret;
 
         // IRQ stuff
-        irq_handler_t handler;
+        /*irq_handler_t handler;
         unsigned long flags;
-        const char *name;
+        const char *name;*/
 
         struct resource *reg_res;
 
@@ -1025,26 +713,6 @@ static int quest_dma_ctrl_probe(struct platform_device *pdev)
            return PTR_ERR(dev_ret);
         }
 
-
-        //pr_info("pdev->dev->of_node %d\n",
-         //       of_property_count_strings(pdev->dev.of_node, "interrupts"));
-
-        //struct device_node *node_test;
-        //node_test = of_find_node_by_name(pdev->dev.of_node, "interrupts");
-
-        //struct of_device *op;
-
-
-/*
-        op = of_find_device_by_node(pdev->dev.of_node);
-
-        if(op->resource[0].start)
-            pr_info("FOUND MY NODE %s", __func__);
-        if(op->irqs[0])
-            pr_info("FOUND MY NODE %s", __func__);*/
-
-
-
         /*pr_info("Getting irqn");
         qcdma.irqn = platform_get_irq(pdev, 0);
         handler = test_interrupt;
@@ -1072,92 +740,7 @@ static int quest_dma_ctrl_probe(struct platform_device *pdev)
 
         pr_info("Done probing\n");
 
-        /*while(!qcdma.done)
-        {
-            ;
-        }*/
-
-        /*
-
-        for_each_node_by_name(ebus_dp, "ebus") {
-                struct device_node *dp;
-                for (dp = ebus_dp; dp; dp = dp->sibling) {
-                        if (!strcmp(dp->name, "rtc")) {
-                                op = of_find_device_by_node(dp);
-                                if (op) {
-                                        rtc_port = op->resource[0].start;
-                                        rtc_irq = op->irqs[0];
-                                        goto found;
-                                }
-                        }
-                }
-        }*/
-
         return 0;
-
-        if(pdev->dev.of_node)
-                pr_info("pdev->dev->of_node\n");
-
-        pr_info("pdev->dev->of_node %d\n",
-                of_property_count_strings(pdev->dev.of_node, "dma-names"));
-
-
-        of_property_read_string_index(pdev->dev.of_node, "dma-names", 0, &test);
-        pr_info("0 = %s", test);
-
-        of_property_read_string_index(pdev->dev.of_node, "dma-names", 1, &test);
-        pr_info("1 = %s", test);
-
-	
-        /*node = of_find_all_nodes(NULL); // Start at root4294967277
-
-	while(node)
-	{
-		pr_info("pdev->dev->of_node %s\n",
-			node->name);
-		if(node->parent)
-		{
-			pr_info("Parent name %s\n",
-				node->parent->name);
-		}
-			
-		node = of_find_all_nodes(node);
-        }
-
-	if (!of_find_property(pdev->dev.of_node, "dmas", NULL))
-                pr_err("No dmas\n");*/
-
-        pr_info("Node name %s", pdev->dev.of_node->name);
-
-        pr_info("Doing the msgdma_0\n");
-
-        chan = dma_request_chan(&pdev->dev, "msgdma0");
-	if (IS_ERR(chan)) {
-		pr_err("questdmatest: No Tx channel %lu\n",
-			PTR_ERR(chan));
-                return PTR_ERR(chan);
-	}
-	pr_info("DMA channel pointer: %x\n",(int)chan);
-
-
-/*	rx_chan = dma_request_slave_channel(&pdev->dev, "axidma1");
-	if (IS_ERR(rx_chan)) {
-		err = PTR_ERR(rx_chan);
-		pr_err("xilinx_dmatest: No Rx channel\n");
-		goto free_tx;
-	}*/
-
-	err = dmatest_add_slave_channels(chan);
-	if (err) {
-		pr_err("xilinx_dmatest: Unable to add channels\n");
-		goto free_tx;
-	}
-	return 0;
-
-free_tx:
-	dma_release_channel(chan);
-
-	return err;
 }
 
 static int quest_dma_ctrl_remove(struct platform_device *pdev)
@@ -1166,16 +749,6 @@ static int quest_dma_ctrl_remove(struct platform_device *pdev)
         //struct dma_chan *chan;
 
         pr_info("%s BEGIN quest_dma_ctrl_remove\n", __func__);
-
-        /*
-	list_for_each_entry_safe(dtc, _dtc, &dmatest_channels, node) {
-		list_del(&dtc->node);
-		chan = dtc->chan;
-		dmatest_cleanup_channel(dtc);
-		pr_info("quest_dmatest: dropped channel %s\n",
-			dma_chan_name(chan));
-		dma_release_channel(chan);
-        }*/
 
         //free_irq(qcdma.irqn, &pdev->dev);
 
