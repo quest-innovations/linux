@@ -20,7 +20,7 @@
 #include <dt-bindings/interrupt-controller/irq.h>
 
 / {
-	model = "Custom project Quest Doloris";
+	model = "Custom project Quest Dolores";
 	compatible = "altr,socfpga-cyclone5", "altr,socfpga";
 
 	chosen {
