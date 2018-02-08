@@ -553,6 +553,7 @@ static int driveGrabbing(void)
 
     qcdma.stop_grabbing = false;    // Reset stop flag
     qcdma.grabbing = false;
+    qcdma.frame_ready = false;	// Reset frame ready flag
     //pr_info("Stopping drive grabbing");
 
     return 0;
