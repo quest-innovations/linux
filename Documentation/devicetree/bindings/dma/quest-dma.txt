@@ -1,0 +1,47 @@
+Usage examples of the quest dma kernel modules
+
+
+
+
+Part 1 generally in the socfpga.dtsi file:
+
+clink_to_av_master_0: quest_dma_ctrl@0x000004400 {
+	compatible = "uest,qdma-clink-1.0.0";
+	reg = <0x00000000 0x00004400 0x00000040>;
+	clocks = <&h2f_user0_clk &h2f_user0_clk>;
+	clock-names = "clock_write", "clock_slave";
+	interrupt-parent = <&intc>;
+	interrupts = <0 42 IRQ_TYPE_EDGE_RISING>;
+	status = "disabled";
+};
+
+Part 2 in the board specific file:
+
+&clink_to_av_master_0 {
+	compatible = "quest,qdma-clink-1.0.0";
+	device = "qdma_clink_0";
+	status = "okay";
+};
+
+
+Part 1 generally in the socfpga.dtsi file:
+
+ez_usb_dma_0: quest_dma_ctrl@0x000004540 {
+	compatible = "quest,qdma-fx3-1.0.0";
+	reg = <0x00000000 0x000004540 0x00000040>;
+	clocks = <&h2f_user0_clk &h2f_user0_clk>;
+	clock-names = "clock_write", "clock_slave";
+	interrupt-parent = <&intc>;
+	interrupts = <0 43 IRQ_TYPE_EDGE_RISING>;
+	status = "disabled";
+};
+
+
+Part 2 in the board specific file:
+
+&ez_usb_dma_0 {
+	compatible = "quest,qdma-fx3-1.0.0";
+	device = "qdma_fx3_0";
+	status = "okay";
+};
+
