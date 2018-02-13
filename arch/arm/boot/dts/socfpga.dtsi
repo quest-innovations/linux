@@ -563,6 +563,15 @@
 				interrupts = <0 42 IRQ_TYPE_EDGE_RISING>;
 				status = "disabled";
 			};
+			ez_usb_dma_0: quest_dma_ctrl@0x000004540 {
+				compatible = "quest,qdma-fx3-1.0.0";
+				reg = <0x00000000 0x000004540 0x00000040>;
+				clocks = <&h2f_user0_clk &h2f_user0_clk>;
+				clock-names = "clock_write", "clock_slave";
+				interrupt-parent = <&intc>;
+				interrupts = <0 43 IRQ_TYPE_EDGE_RISING>;
+				status = "disabled";
+			};
 		};
 
 		fpgamgr0: fpgamgr@ff706000 {

@@ -174,10 +174,13 @@
 
 
 &clink_to_av_master_0 {
-	compatible = "quest,quest-dma-ctrl-1.00.a";
-	dmas = <&pdma 0>;
-	dma-names = "pdma";
-	interrupt-parent = <&portc>;
-	interrupts = <3 IRQ_TYPE_EDGE_FALLING>;
+	compatible = "quest,qdma-clink-1.0.0";
+	device = "qdma_clink";
+	status = "okay";
+};
+
+&ez_usb_dma_0 {
+	compatible = "quest,qdma-fx3-1.0.0";
+	device = "qdma_fx3_0";
 	status = "okay";
 };
