@@ -13,6 +13,7 @@
 #define CH_CNT 1
 #define BUF_CNT 10
 
+
 static struct device *dev_reg;
 
 static dev_t dev;
@@ -93,7 +94,7 @@ static int quest_clink_in_dma_read(unsigned int ch, u8 *buf, unsigned int sizeBy
 {
 	struct quest_dma_channel_struct *chan;
 
-	pr_info("Reading data\n");
+	//pr_info("Reading data\n");
 
 	if(ch >= qdma.ch_cnt)
 		return -1;
@@ -102,20 +103,21 @@ static int quest_clink_in_dma_read(unsigned int ch, u8 *buf, unsigned int sizeBy
 
 	if(chan->last_read == chan->last_write) {
 		int result;
-		//--//printk("GW   - Waiting for next image");
+
+		//printk("GW   - Waiting for next image");
 		result = wait_event_interruptible(data_wait, chan->data_ready || qdma.stop_reading);
 
 		if(qdma.stop_reading) {
 			return -1;
 		} else if(chan->data_ready) {
-			//--//printk("DW   - Done with waiting for frame ready!");
+			//printk("DW   - Done with waiting for frame ready!");
 			chan->data_ready = false; // Reset frame ready signal
 		} else {
 			//pr_info("    Woken up by? %d", result);
 			return result;
 		}
 	} else {
-		//--//printk("    Catching up on images lr: %d lw: %d", chan->last_read, chan->last_write);
+		printk("    Catching up on images lr: %d lw: %d", chan->last_read, chan->last_write);
 
 		if(chan->data_ready) // If frame ready was set while not waiting for a frame, reset the flag
 			chan->data_ready = false;
@@ -140,11 +142,11 @@ static int quest_clink_in_dma_read(unsigned int ch, u8 *buf, unsigned int sizeBy
 	//--//printk("GRAB - Last read: %d > %d Last write: %d", prevLastRead, chan->last_read, chan->last_write);
 
 	if (copy_to_user(buf, chan->bufs_user[chan->last_read], chan->data_size_bytes)) {
-		//pr_info("Oops, transfer went wrong :(");
+		pr_info("Oops, transfer went wrong :(");
 		return -EACCES;
 	}
 
-	pr_info("Reading done\n");
+	//pr_info("Reading done\n");
 
 	return 0;
 }
@@ -156,8 +158,14 @@ static int quest_clink_in_dma_read(unsigned int ch, u8 *buf, unsigned int sizeBy
  */
 static int quest_clink_in_dma_stop_read(void)
 {
+	u32 control = quest_clink_in_dma_getreg(Control);
+	quest_clink_in_dma_setreg(Control, control & ~InitDone);
+
 	qdma.stop_reading = true;
 	wake_up_interruptible(&data_wait); // Awake process to return
+
+	quest_clink_in_dma_setreg(Control, control | InitDone);
+
 	return 0;
 }
 
@@ -184,7 +192,7 @@ static int quest_clink_in_dma_set_ch_size(unsigned int ch, unsigned int sizeByte
 
 	quest_clink_in_dma_setreg(Control, 0); // Put DMA module in init state
 
-	if(qdma.channels[ch].data_size_bytes == 0)
+	if(qdma.channels[ch].data_size_bytes != 0)
 		quest_dma_core_destroy_buffers(dev_reg, &qdma.channels[ch]); // Needs destroying before creating
 
 	pr_info("Ch size \n");
@@ -308,18 +316,21 @@ static int quest_clink_in_dma_drive_read(struct quest_dma_channel_struct *chan)
 			control = quest_clink_in_dma_getreg(Control);
 			quest_clink_in_dma_setreg(Control, control | IrqAck);
 
+			// Wait for image done to be low
+			if(quest_clink_in_dma_getreg(Status) & (ImageDone | Busy)) {
+				pr_info("!!!!!Image done or busy still high 1!!!!!!!!");
+				msleep(1000); // Wait for a bit
+			}
+			// Wait for image done to be low
+			if(quest_clink_in_dma_getreg(Status) & (ImageDone | Busy)) {
+				pr_info("!!!!!Image done or busy still high. Control: %d Status: %d", quest_clink_in_dma_getreg(Control), quest_clink_in_dma_getreg(Status));
+				msleep(1); // Wait for a bit
+				break;
+			}
+
 			////pr_info("    %s Start", __func__);
 			quest_clink_in_dma_setreg(Control, control | Start);
 
-			// Wait for image done to be low
-			if(quest_clink_in_dma_getreg(Status) & ImageDone) {
-				//pr_info("!!!!!Image done still high 1!!!!!!!!");
-				msleep(100); // Wait for a bit
-			}
-			if(quest_clink_in_dma_getreg(Status) & ImageDone) {
-				//pr_info("!!!!!Image done still high 2!!!!!!");
-				msleep(1000); // Wait for a bit
-			}
 			wake_up_interruptible(&data_wait);
 		} else {
 			usleep_range(100, 200);
@@ -331,7 +342,12 @@ static int quest_clink_in_dma_drive_read(struct quest_dma_channel_struct *chan)
 
 	qdma.stop_reading = false;    // Reset stop flag
 	qdma.reading = false;
+
+	chan->data_ready = false;	// Reset frame ready flag
+
 	pr_info("Stopping drive grabbing");
+
+	return 0;
 }
 
 /**
@@ -347,7 +363,7 @@ static long quest_clink_in_dma_ioctl(struct file *f, unsigned int cmd, unsigned 
 
 	switch (cmd) {
 	case QDMA_READ:
-		pr_info("QDMA_READ \n");
+		//pr_info("QDMA_READ \n");
 		if (copy_from_user(&buf, (qdma_buf_arg_t *)arg, sizeof(buf)))
 			return -EACCES;
 
@@ -375,13 +391,18 @@ static long quest_clink_in_dma_ioctl(struct file *f, unsigned int cmd, unsigned 
 		return quest_clink_in_dma_drive_read(&qdma.channels[var]);
 	case QDMA_GETREG:
 		pr_info("QDMA_GETREG \n");
-		if (copy_from_user(&buf, (qdma_reg_arg_t *)arg, sizeof(reg)))
+		if (copy_from_user(&reg, (qdma_reg_arg_t *)arg, sizeof(reg)))
 			return -EACCES;
 
-		return quest_clink_in_dma_getreg(reg.offset);
+		reg.value = quest_clink_in_dma_getreg(reg.offset);
+
+		if (copy_to_user((qdma_reg_arg_t *)arg, &reg, sizeof(reg)))
+			return -EACCES;
+
+		return 0;
 	case QDMA_SETREG:
 		pr_info("QDMA_SETREG \n");
-		if (copy_from_user(&buf, (qdma_reg_arg_t *)arg, sizeof(reg)))
+		if (copy_from_user(&reg, (qdma_reg_arg_t *)arg, sizeof(reg)))
 			return -EACCES;
 
 		quest_clink_in_dma_setreg(reg.offset, reg.value);
@@ -448,7 +469,7 @@ static int quest_clink_in_dma_probe(struct platform_device *pdev)
 	struct device *dev_creation_ret;
 	char *char_dev_name;
 
-	struct device_node * node;
+	struct device_node * node = pdev->dev.of_node;
 
 	struct property *prop;
 
@@ -472,71 +493,11 @@ static int quest_clink_in_dma_probe(struct platform_device *pdev)
 
 	pr_info("Creating char dev");
 
-	node = of_find_node_by_name(NULL, "quest_dma_ctrl");
-
-	//node = of_find_all_nodes(NULL); // Start at root4294967277
-
-	//of_find_property(NULL, "device", NULL)
-
 	prop = of_find_property(node, "device", NULL);
 
 	pr_info("tests %s \n", (char *)prop->value);
 
 	char_dev_name = (char *)prop->value;
-
-	/*for_each_property_of_node(node, prop) {
-		pr_info("prop->name %s\n",
-			prop->name);
-			if (!strcmp(prop->name, "name") || !strcmp(prop->name, "phandle"))
-				continue;
-
-			if (of_property_read_u64_array(np, prop->name, &vals[0], 2))
-				continue;
-
-			attr = kzalloc(sizeof(*attr), GFP_KERNEL);
-
-			if (attr == NULL) {
-				pr_warn("Failed kmalloc for bin_attribute!");
-				continue;
-			}
-
-			sysfs_bin_attr_init(attr);
-			attr->attr.name = kstrdup(prop->name, GFP_KERNEL);
-			attr->attr.mode = 0400;
-			attr->read = export_attr_read;
-			attr->private = __va(vals[0]);
-			attr->size = vals[1];
-
-			if (attr->attr.name == NULL) {
-				pr_warn("Failed kstrdup for bin_attribute attr.name");
-				kfree(attr);
-				continue;
-			}
-
-			rc = sysfs_create_bin_file(kobj, attr);
-			if (rc) {
-				pr_warn("Error %d creating OPAL sysfs exports/%s file\n",
-					 rc, prop->name);
-				kfree(attr->attr.name);
-				kfree(attr);
-			}
-	}*/
-
-	/*while(node)
-	{
-		pr_info("pdev->dev->of_node %s\n",
-			node->name);
-		if(node->parent)
-		{
-			pr_info("Parent name %s\n",
-				node->parent->name);
-		}
-
-		node = of_find_all_nodes(node);
-	}*/
-
-	//if (!of_find_property(pdev->dev.of_node, "dmas", NULL))
-	//	pr_err("No dmas\n");*/
 
 	pr_info("Device create\n");
 
@@ -553,7 +514,7 @@ static int quest_clink_in_dma_probe(struct platform_device *pdev)
 
 	pr_info("Device create\n");
 
-	if (IS_ERR(cl = class_create(THIS_MODULE, "char"))) {
+	if (IS_ERR(cl = class_create(THIS_MODULE, "qdma_clink"))) {
 	   cdev_del(&c_dev);
 	   unregister_chrdev_region(dev, MINOR_CNT);
 	   return PTR_ERR(cl);
@@ -593,7 +554,7 @@ static int quest_clink_in_dma_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
-	pr_info("INIT DONE %d %d", qdma.base_addr, quest_clink_in_dma_getreg(0));
+	pr_info("INIT DONE %d %d", (u32)qdma.base_addr, quest_clink_in_dma_getreg(0));
 
 	return 0;
 }

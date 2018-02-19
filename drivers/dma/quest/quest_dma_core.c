@@ -15,7 +15,7 @@
 u32 quest_dma_core_getreg(struct quest_dma_struct *dma, u32 offset)
 {
     u32 test = readl(dma->base_addr + (offset * 4));
-    pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)dma->base_addr, (u32)offset, test);
+    //pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)dma->base_addr, (u32)offset, test);
 
     return test;
 }
@@ -28,7 +28,7 @@ u32 quest_dma_core_getreg(struct quest_dma_struct *dma, u32 offset)
 void quest_dma_core_setreg(struct quest_dma_struct *dma, u32 offset, u32 value)
 {
     writel(value, dma->base_addr + (offset * 4));
-    pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)dma->base_addr, (u32)offset, value);
+    //pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)dma->base_addr, (u32)offset, value);
     udelay(500);
 }
 
@@ -68,7 +68,7 @@ int quest_dma_core_create_buffers(struct device *dev, struct quest_dma_channel_s
     qcdma.bufs_user = kcalloc(qcdma.bufs_cnt+1, sizeof(u8 *), GFP_KERNEL);
     qcdma.dma_handles = kcalloc(qcdma.bufs_cnt, sizeof(dma_addr_t), GFP_KERNEL);*/
 
-    pr_info("%d %d %d %d %d", channel->bufs_cnt, channel->bufs, channel->bufs_raw, channel->bufs_user, channel->dma_handles);
+    //pr_info("%d %d %d %d %d", channel->bufs_cnt, channel->bufs, channel->bufs_raw, channel->bufs_user, channel->dma_handles);
 
     if(!channel->bufs ||
 	!channel->bufs_raw ||
@@ -135,6 +135,9 @@ int quest_dma_core_destroy_buffers(struct device *dev, struct quest_dma_channel_
     if(channel->bufs_user)
 	kfree(channel->bufs_user);
 
+    channel->bufs = 0;
+    channel->bufs_raw = 0;
+    channel->bufs_user = 0;
     channel->bufs_size = 0;
     channel->bufs_cnt = 0;
 

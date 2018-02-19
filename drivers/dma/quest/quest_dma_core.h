@@ -48,6 +48,7 @@ struct quest_dma_struct {
 	unsigned int ch_cnt;
 
 	bool stop_reading;
+	bool pause_reading;
 	bool reading;
 
 	int irqn;
