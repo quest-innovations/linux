@@ -46,13 +46,9 @@ static int lis3dh_acc_spi_read(struct lis3dh_acc_status *stat, u8 reg_addr, int 
 	struct spi_transfer xfers[] = {
 		{
 			.tx_buf = stat->tb.tx_buf,
-			.bits_per_word = 8,
-			.len = 1,
-		},
-		{
 			.rx_buf = stat->tb.rx_buf,
 			.bits_per_word = 8,
-			.len = len,
+			.len = len + 1,
 		}
 	};
 
@@ -61,13 +57,12 @@ static int lis3dh_acc_spi_read(struct lis3dh_acc_status *stat, u8 reg_addr, int 
 
 	spi_message_init(&msg);
 	spi_message_add_tail(&xfers[0], &msg);
-	spi_message_add_tail(&xfers[1], &msg);
 
 	err = spi_sync(spi, &msg);
 	if (err)
 		goto acc_spi_read_error;
 
-	memcpy(data, stat->tb.rx_buf, len*sizeof(u8));
+	memcpy(data, stat->tb.rx_buf + 1, len*sizeof(u8));
 	mutex_unlock(&stat->tb.buf_lock);
 
 	return len;
@@ -117,15 +112,18 @@ static int lis3dh_acc_spi_probe(struct spi_device *spi)
 	int err;
 	struct lis3dh_acc_status *stat;
 
+
 	stat = kmalloc(sizeof(struct lis3dh_acc_status), GFP_KERNEL);
 	if (!stat)
 		return -ENOMEM;
+
 
 	stat->dev = &spi->dev;
 	stat->name = spi->modalias;
 	stat->bustype = BUS_SPI;
 	stat->tf = &lis3dh_acc_tf_spi;
 	spi_set_drvdata(spi, stat);
+
 
 	err = lis3dh_acc_probe(stat, spi->irq);
 	if (err < 0)

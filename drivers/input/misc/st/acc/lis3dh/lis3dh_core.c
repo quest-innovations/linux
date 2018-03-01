@@ -981,8 +981,6 @@ int lis3dh_acc_probe(struct lis3dh_acc_status *stat, int irq)
 	int err = -1;
 	u8 wai = 0;
 
-	dev_info(stat->dev, "probe start.\n");
-
 	mutex_init(&stat->lock);
 	mutex_init(&stat->tb.buf_lock);
 
@@ -1092,6 +1090,7 @@ int lis3dh_acc_probe(struct lis3dh_acc_status *stat, int irq)
 		if (err < 0)
 			goto err_remove_sysfs_int;
 
+		dev_info(stat->dev, "IRQ %x requested.\n", irq);
 		disable_irq_nosync(irq);
 	}
 
