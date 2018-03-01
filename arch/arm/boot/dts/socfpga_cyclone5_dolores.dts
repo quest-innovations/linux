@@ -16,8 +16,10 @@
  */
 
 /dts-v1/;
-#include "socfpga_cyclone5.dtsi"
+#include "socfpga_cyclone5_dolores_base.dtsi"
 #include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 
 / {
 	model = "Custom project Quest Dolores";
@@ -40,7 +42,15 @@
 		ethernet0 = &gmac1;
 	};
 
-
+	gpiokeys {
+		compatible = "gpio-keys";
+		camera_capture {
+			label = "Camera Capture";
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>; /* 69 */
+			linux,code = <KEY_CAMERA>;
+			linux,can-disable;
+		};
+	};
 
 	panel_0: panel {
 		compatible = "ortustech,com43h4m85ulc";
@@ -57,15 +67,18 @@
 	};
 };
 
-&fpga_bridge1{
-	ranges = <0x00000000 0x000044c0 0xc00044c0 0x00000040>,
-		<0x00000000 0x00004480 0xc0004480 0x00000040>,
-		<0x00000000 0x00000000 0xc0000000 0x00004000>,
-		<0x00000000 0x00004440 0xc0004440 0x00000040>,
-		<0x00000000 0x00004400 0xc0004400 0x00000040>,
-		<0x00000000 0x00004500 0xc0004500 0x00000010>,
-		<0x00000000 0x00004000 0xc0004000 0x00000400>;
-};
+//&fpga_bridge1{
+//	ranges = <0x00000000 0x00004510 0xc0004510 0x00000010>,
+//		<0x00000000 0x000044c0 0xc00044c0 0x00000040>,
+//		<0x00000000 0x00004480 0xc0004480 0x00000040>,
+//		<0x00000000 0x00000000 0xc0000000 0x00004000>,
+//		<0x00000000 0x00004440 0xc0004440 0x00000040>,
+//		<0x00000000 0x00004400 0xc0004400 0x00000040>,
+//		<0x00000000 0x00004540 0xc0004540 0x00000040>,
+//		<0x00000000 0x00004600 0xc0004600 0x00000040>,
+//		<0x00000000 0x00004500 0xc0004500 0x00000010>,
+//		<0x00000000 0x00004000 0xc0004000 0x00000400>;
+//};
 
 &gmac1 {
 	status = "okay";
@@ -149,16 +162,34 @@
 };
 
 &spi0 {
-	status = "disabled";
-	spidev@0 {
-		compatible = "spidev";
+	status = "okay";
+	lis3dh: accelerometer@0{
+//		compatible = "spidev";
+// /		compatible = "st,lis3dh";
+		compatible = "st,lis3dh-accel";
 		reg = <0>;
 		spi-max-frequency = <1000000>;
+		spi-cpol;
+		spi-cpha;
+		st,drdy-int-pin = <1>;
+
+//		vdd-supply = <&regulator_3_3v>;
+
+//		interrupt-parent = <&portb>;
+//		interrupts = <23 IRQ_TYPE_EDGE_FALLING>;
+//		interrupt-parent = <&gpio3>;
+	//	interrupts = <3>; /* gpio34 */
+	};
+	spidev@1 {
+		compatible = "spidev";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+		status = "disabled";
 	};
 };
 
 &fb_0{
-	status = "okay";
+	status = "disabled";
 	ports {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -182,5 +213,9 @@
 &ez_usb_dma_0 {
 	compatible = "quest,qdma-fx3-1.0.0";
 	device = "qdma_fx3_0";
+	status = "okay";
+};
+
+&watchdog0 {
 	status = "okay";
 };

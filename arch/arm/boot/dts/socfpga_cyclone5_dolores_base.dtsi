@@ -18,17 +18,64 @@
 /dts-v1/;
 
 #include "socfpga_cyclone5.dtsi"
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
-	soc {
-		fpga_bridge1{
-			compatible = "altr,socfpga-hps2fpga-bridge";
-			reg = <0xc0000000 0x20000000>;
-			resets = <&rst HPS2FPGA_RESET>;
-			clocks = <&l4_main_clk>;
-			#address-cells = <2>;
-			#size-cells = <1>;
-		};
 
+};
+
+&fpga_bridge1{
+	ranges = <0x00000000 0x00004510 0xc0004510 0x00000010>,
+		<0x00000000 0x000044c0 0xc00044c0 0x00000040>,
+		<0x00000000 0x00004480 0xc0004480 0x00000040>,
+		<0x00000000 0x00000000 0xc0000000 0x00004000>,
+		<0x00000000 0x00004440 0xc0004440 0x00000040>,
+		<0x00000000 0x00004400 0xc0004400 0x00000040>,
+		<0x00000000 0x00004540 0xc0004540 0x00000040>,
+		<0x00000000 0x00004600 0xc0004600 0x00000040>,
+		<0x00000000 0x00004500 0xc0004500 0x00000010>,
+		<0x00000000 0x00004000 0xc0004000 0x00000400>;
+
+	fb_0: framebuffer@0x000004480 {
+		compatible = "altr,vip-frame-buffer-2.0";
+		reg = <0x00000000 0x000004480 0x00000040>;
+		altr,max-width = <480>;
+		altr,max-height = <800>;
+		altr,mem-port-width = <128>;				
+		status = "disabled";
 	};
+	clink_to_av_master_0: clink_to_av_master@0x000004400 {
+		compatible = "quest,qdma-clink-1.0.0";
+		reg = <0x00000000 0x00004400 0x00000040>;
+		clocks = <&h2f_user0_clk &h2f_user0_clk>;
+		clock-names = "clock_write", "clock_slave";
+		interrupt-parent = <&intc>;
+		interrupts = <0 42 IRQ_TYPE_EDGE_RISING>;
+		status = "disabled";
+	};
+	ez_usb_dma_0: ez_usb_dma@0x000004540 {
+		compatible = "quest,qdma-fx3-1.0.0";
+		reg = <0x00000000 0x00004540 0x00000040>;
+		clocks = <&h2f_user0_clk &h2f_user0_clk>;
+		clock-names = "clock_write", "clock_slave";
+		interrupt-parent = <&intc>;
+		interrupts = <0 43 IRQ_TYPE_EDGE_RISING>;
+		status = "disabled";
+	};
+
+	gpio3: gpio@0x000004500 {
+		compatible = "altr,pio-1.0";
+		reg = <0x00000000 0x00001020 0x00000010>;
+		clocks = <&h2f_user0_clk>;
+		altr,ngpio = <8>;
+		altr,interrupt-type = <IRQ_TYPE_EDGE_BOTH>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		interrupt-controller;
+		interrupt-parent = <&intc>;
+		#interrupt-cells = <1>;
+		interrupts = <0 41 IRQ_TYPE_EDGE_RISING>;
+	};
+
 };
