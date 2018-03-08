@@ -35,11 +35,19 @@ struct quest_dma_channel_struct {
 	unsigned int bufs_cnt;
 	unsigned int data_size_bytes;
 
+	uint8_t *write_buf;
+	uint32_t write_buf_raw;
+	uint8_t *write_buf_user;
+
+	dma_addr_t write_dma_handle;
+	unsigned int write_buf_size;
+	unsigned int write_data_size;
+
 	unsigned int check_range;
 
 	unsigned int last_read;
 	unsigned int last_write;
-	bool data_skipped;
+	bool buffers_full;
 	bool data_ready;
 };
 
@@ -48,7 +56,8 @@ struct quest_dma_struct {
 	unsigned int ch_cnt;
 
 	bool stop_reading;
-	bool pause_reading;
+	bool stop_reading_acq;
+	bool in_read;
 	bool reading;
 
 	int irqn;
@@ -61,6 +70,8 @@ u32 quest_dma_core_getreg(struct quest_dma_struct *dma, u32 offset);
 void quest_dma_core_setreg(struct quest_dma_struct *dma, u32 offset, u32 value);
 
 int quest_dma_core_create_buffers(struct device *dev, struct quest_dma_channel_struct *channel, unsigned int buf_cnt, unsigned int buf_size);
+int quest_dma_core_create_write_buffer(struct device *dev, struct quest_dma_channel_struct *channel, unsigned int buf_size);
 int quest_dma_core_destroy_buffers(struct device *dev, struct quest_dma_channel_struct *channel);
+int quest_dma_core_destroy_write_buffer(struct device *dev, struct quest_dma_channel_struct *channel);
 
 #endif // QUEST_DMA_CORE_H_

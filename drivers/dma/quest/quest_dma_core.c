@@ -29,7 +29,7 @@ void quest_dma_core_setreg(struct quest_dma_struct *dma, u32 offset, u32 value)
 {
     writel(value, dma->base_addr + (offset * 4));
     //pr_info("    %s dma base: %d\n      offset: %d value: %d", __func__, (u32)dma->base_addr, (u32)offset, value);
-    udelay(500);
+    udelay(1);
 }
 
 int quest_dma_core_create_buffers(struct device *dev, struct quest_dma_channel_struct *channel, unsigned int buf_cnt, unsigned int buf_size)
@@ -110,6 +110,53 @@ int quest_dma_core_create_buffers(struct device *dev, struct quest_dma_channel_s
     return 0;
 }
 
+int quest_dma_core_create_write_buffer(struct device *dev, struct quest_dma_channel_struct *channel, unsigned int buf_size)
+{
+    //u32 i = 0;
+    //u32 j = 0;
+
+    pr_info("%s Begin %d", __func__, buf_size);
+
+    pr_info("Core, 1");
+
+    if(channel->write_buf != 0)
+	return -1;
+/*
+    uint8_t *write_buf;
+    uint32_t write_buf_raw;
+    uint8_t *write_buf_user;
+
+    dma_addr_t *write_dma_handle;
+
+    unsigned int write_buf_size;
+*/
+
+    channel->write_data_size = buf_size;
+
+    channel->check_range = 1024;
+
+    channel->write_buf_size = channel->write_data_size + (channel->check_range * 2);
+
+    pr_info("Core, 3");
+
+    channel->write_buf = dma_alloc_coherent(dev, channel->write_buf_size, &channel->write_dma_handle, GFP_KERNEL);
+
+    pr_info("Still alive!");
+
+    if(!channel->write_buf)
+    {
+	    pr_info("Core, error creating write buffers");
+	    return -1;
+    }
+
+    channel->write_buf_user = channel->write_buf + channel->check_range;
+    channel->write_buf_raw = channel->write_dma_handle + channel->check_range;
+
+    pr_info("Core, write buffers created");
+
+    return 0;
+}
+
 /**
  * cam_dma_cleanup - Cleanup DMA buffer
  */
@@ -145,3 +192,24 @@ int quest_dma_core_destroy_buffers(struct device *dev, struct quest_dma_channel_
 
     return 0;
 }
+
+/**
+ * cam_dma_cleanup - Cleanup DMA write buffer
+ */
+int quest_dma_core_destroy_write_buffer(struct device *dev, struct quest_dma_channel_struct *channel)
+{
+	if(channel->write_buf)
+	{
+		dma_free_coherent(dev, channel->write_buf_size, channel->write_buf, channel->write_dma_handle);
+	}
+
+	channel->write_buf = 0;
+
+	pr_info("%s", __func__);
+
+	return 0;
+}
+
+/*MODULE_AUTHOR("Quest Innovations B.V.");
+MODULE_DESCRIPTION("Quest DMA core");
+MODULE_LICENSE("GPL v2");*/

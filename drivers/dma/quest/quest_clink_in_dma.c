@@ -90,24 +90,34 @@ static DECLARE_WAIT_QUEUE_HEAD(data_wait);
  *
  * Return: TODO
  */
-static int quest_clink_in_dma_read(unsigned int ch, u8 *buf, unsigned int sizeBytes)
+static int quest_clink_in_dma_read(unsigned int ch, u8 *buf, bool* buf_full, unsigned int sizeBytes)
 {
 	struct quest_dma_channel_struct *chan;
 
-	//pr_info("Reading data\n");
+	pr_info("Reading data\n");
 
 	if(ch >= qdma.ch_cnt)
 		return -1;
+
+	if(buf == 0 ||
+	        buf_full == 0)
+		return -1;
+
+	if(!qdma.reading)
+	{
+		pr_info("Not reading\n");
+	}
 
 	chan = &qdma.channels[ch];
 
 	if(chan->last_read == chan->last_write) {
 		int result;
 
-		//printk("GW   - Waiting for next image");
+		printk("GW   - Waiting for next image");
 		result = wait_event_interruptible(data_wait, chan->data_ready || qdma.stop_reading);
 
 		if(qdma.stop_reading) {
+			pr_info("STOPPING THE READ");
 			return -1;
 		} else if(chan->data_ready) {
 			//printk("DW   - Done with waiting for frame ready!");
@@ -146,7 +156,14 @@ static int quest_clink_in_dma_read(unsigned int ch, u8 *buf, unsigned int sizeBy
 		return -EACCES;
 	}
 
-	//pr_info("Reading done\n");
+	if(chan->buffers_full) {
+		if (copy_to_user(buf_full, &chan->buffers_full, sizeof(chan->buffers_full))) {
+			pr_info("Oops, transfer went wrong :(");
+			return -EACCES;
+		}
+	}
+
+	pr_info("Reading done\n");
 
 	return 0;
 }
@@ -268,7 +285,8 @@ static int quest_clink_in_dma_drive_read(struct quest_dma_channel_struct *chan)
 	pr_info("Drive started\n");
 
 	while(!qdma.stop_reading) {
-		if(quest_clink_in_dma_getreg(Status) & ImageDone) {
+		if(!chan->buffers_full &&
+		        quest_clink_in_dma_getreg(Status) & ImageDone) {
 			pr_debug("Image received!");
 
 			prevLastWrite = chan->last_write;
@@ -280,12 +298,13 @@ static int quest_clink_in_dma_drive_read(struct quest_dma_channel_struct *chan)
 				last_write_chk_buf -= (chan->bufs_cnt - 1);
 			if(last_write_chk_buf == chan->last_read)
 			{
-				//pr_info("%s Skipping frame", __func__);
-				chan->data_skipped = true;
-				if(chan->last_read == chan->bufs_cnt - 1)
+				pr_info("%s Buffers full", __func__);
+				chan->buffers_full = true;
+				continue;
+				/*if(chan->last_read == chan->bufs_cnt - 1)
 					chan->last_read = 0;
 				else
-					++chan->last_read;
+					++chan->last_read;*/
 			}
 
 			if(chan->last_write == chan->bufs_cnt - 1)
@@ -344,6 +363,7 @@ static int quest_clink_in_dma_drive_read(struct quest_dma_channel_struct *chan)
 	qdma.reading = false;
 
 	chan->data_ready = false;	// Reset frame ready flag
+	chan->buffers_full = false;	// Reset full flag
 
 	pr_info("Stopping drive grabbing");
 
@@ -359,36 +379,35 @@ static long quest_clink_in_dma_ioctl(struct file *f, unsigned int cmd, unsigned 
 {
 	qdma_buf_arg_t buf;
 	qdma_reg_arg_t reg;
-	u32 var;
 
 	switch (cmd) {
 	case QDMA_READ:
-		//pr_info("QDMA_READ \n");
+		pr_info("QDMA_READ \n");
 		if (copy_from_user(&buf, (qdma_buf_arg_t *)arg, sizeof(buf)))
 			return -EACCES;
 
-		return quest_clink_in_dma_read(buf.ch, buf.buf, buf.size_bytes);
+		return quest_clink_in_dma_read(buf.ch, buf.buf, buf.buffers_full, buf.size_bytes);
 	case QDMA_STOP_READ:
 		pr_info("QDMA_STOP_READ \n");
 		quest_clink_in_dma_stop_read();
 		break;
-	case QDMA_SET_CH_SIZE:
-		pr_info("QDMA_SET_CH_SIZE \n");
+	case QDMA_SET_CH_READ_SIZE:
+		pr_info("QDMA_SET_CH_READ_SIZE \n");
 		if (copy_from_user(&buf, (qdma_buf_arg_t *)arg, sizeof(buf)))
 			return -EACCES;
 
 		return quest_clink_in_dma_set_ch_size(buf.ch, buf.size_bytes);
 	case QDMA_DRIVE_READ:
 		pr_info("QDMA_DRIVE_READ \n");
-		if (copy_from_user(&var, (u32 *)arg, sizeof(var)))
+		if (copy_from_user(&buf, (qdma_buf_arg_t *)arg, sizeof(buf)))
 			return -EACCES;
 
-		pr_info("DRIVE %d", var);
+		pr_info("DRIVE %d", buf.size_bytes);
 
-		if(var >= qdma.ch_cnt)
+		if(buf.ch >= qdma.ch_cnt)
 			return -1;
 
-		return quest_clink_in_dma_drive_read(&qdma.channels[var]);
+		return quest_clink_in_dma_drive_read(&qdma.channels[buf.ch]);
 	case QDMA_GETREG:
 		pr_info("QDMA_GETREG \n");
 		if (copy_from_user(&reg, (qdma_reg_arg_t *)arg, sizeof(reg)))
@@ -442,7 +461,7 @@ static int quest_clink_in_dma_create_channels(void)
 		qdma.channels[i].bufs_size = 0;
 		qdma.channels[i].bufs_cnt = 0;
 		qdma.channels[i].data_size_bytes = 0;
-		qdma.channels[i].data_skipped = false;
+		qdma.channels[i].buffers_full = false;
 		qdma.channels[i].data_ready = false;
 	}
 
