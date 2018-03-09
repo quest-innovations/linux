@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2013 Steffen Trumtrar <s.trumtrar@pengutronix.de>
+ *  Copyright (C) 2018 Quest Innovations <www.quest-innovations.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 	memory {
 		name = "memory";
 		device_type = "memory";
-		reg = <0x0 0x40000000>; /* 1GB */
+		reg = <0x0 0x80000000>; /* 1GB */
 	};
 
 	aliases {
@@ -46,16 +46,28 @@
 		compatible = "gpio-keys";
 		camera_capture {
 			label = "Camera Capture";
-			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>; /* 69 */
+			gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_CAMERA>;
 			linux,can-disable;
+			status = "okay";
 		};
+		power_button {
+			label = "Power Button";
+			gpios = <&gpio3 2 GPIO_ACTIVE_LOW>; 
+			linux,code = <KEY_POWER>;
+			linux,can-disable;
+			status = "okay";
+		};
+		
+	};
+	gpio-poweroff {
+		compatible = "gpio-poweroff";
+		gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 
 	panel_0: panel {
 		compatible = "ortustech,com43h4m85ulc";
-	//	compatible = "innolux,g121x1-l03";
-	//	compatible = "edt,et057090dhu";
 		power-supply = <&regulator_3_3v>;
 	};
 
@@ -66,19 +78,6 @@
 		regulator-max-microvolt = <3300000>;
 	};
 };
-
-//&fpga_bridge1{
-//	ranges = <0x00000000 0x00004510 0xc0004510 0x00000010>,
-//		<0x00000000 0x000044c0 0xc00044c0 0x00000040>,
-//		<0x00000000 0x00004480 0xc0004480 0x00000040>,
-//		<0x00000000 0x00000000 0xc0000000 0x00004000>,
-//		<0x00000000 0x00004440 0xc0004440 0x00000040>,
-//		<0x00000000 0x00004400 0xc0004400 0x00000040>,
-//		<0x00000000 0x00004540 0xc0004540 0x00000040>,
-//		<0x00000000 0x00004600 0xc0004600 0x00000040>,
-//		<0x00000000 0x00004500 0xc0004500 0x00000010>,
-//		<0x00000000 0x00004000 0xc0004000 0x00000400>;
-//};
 
 &gmac1 {
 	status = "okay";
@@ -147,12 +146,8 @@
 	touch@4a {
 		compatible = "atmel,maxtouch";
 		reg = <0x4a>;
-//		interrupt-parent = <&gpio4>;
-//		interrupts = <0>;
 		interrupt-parent = <&portb>;
 		interrupts = <22 IRQ_TYPE_EDGE_FALLING>;
-//		interrupt-parent = <&portc>;
-//		interrupts = <3 IRQ_TYPE_EDGE_RISING>;
 	};
 	isl12057: isl12057@6F {
 		compatible = "isil,isl12022";
@@ -165,7 +160,7 @@
 	status = "okay";
 	lis3dh: accelerometer@0{
 //		compatible = "spidev";
-// /		compatible = "st,lis3dh";
+//		compatible = "st,lis3dh";
 		compatible = "st,lis3dh-accel";
 		reg = <0>;
 		spi-max-frequency = <1000000>;
@@ -178,18 +173,24 @@
 //		interrupt-parent = <&portb>;
 //		interrupts = <23 IRQ_TYPE_EDGE_FALLING>;
 //		interrupt-parent = <&gpio3>;
-	//	interrupts = <3>; /* gpio34 */
+//		interrupts = <3>; /* gpio34 */
 	};
 	spidev@1 {
 		compatible = "spidev";
 		reg = <1>;
 		spi-max-frequency = <1000000>;
-		status = "disabled";
+		status = "okay";
+	};
+	spidev@2 {
+		compatible = "spidev";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+		status = "okay";
 	};
 };
 
 &fb_0{
-	status = "disabled";
+	status = "okay";
 	ports {
 		#address-cells = <1>;
 		#size-cells = <0>;

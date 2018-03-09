@@ -544,34 +544,6 @@
 			clocks = <&l4_main_clk>;
 			#address-cells = <2>;
 			#size-cells = <1>;
-			
-
-//			fb_0: framebuffer@0x000004480 {
-//				compatible = "altr,vip-frame-buffer-2.0";
-//				reg = <0x00000000 0x000004480 0x00000040>;
-//				altr,max-width = <480>;
-//				altr,max-height = <800>;
-//				altr,mem-port-width = <128>;				
-//				status = "disabled";
-//			};
-//			clink_to_av_master_0: clink_to_av_master@0x000004400 {
-//				compatible = "quest,qdma-clink-1.0.0";
-//				reg = <0x00000000 0x00004400 0x00000040>;
-//				clocks = <&h2f_user0_clk &h2f_user0_clk>;
-//				clock-names = "clock_write", "clock_slave";
-//				interrupt-parent = <&intc>;
-//				interrupts = <0 42 IRQ_TYPE_EDGE_RISING>;
-//				status = "disabled";
-//			};
-//			ez_usb_dma_0: ez_usb_dma@0x000004540 {
-//				compatible = "quest,qdma-fx3-1.0.0";
-//				reg = <0x00000000 0x00004540 0x00000040>;
-//				clocks = <&h2f_user0_clk &h2f_user0_clk>;
-//				clock-names = "clock_write", "clock_slave";
-//				interrupt-parent = <&intc>;
-//				interrupts = <0 43 IRQ_TYPE_EDGE_RISING>;
-//				status = "disabled";
-//			};
 		};
 
 		fpgamgr0: fpgamgr@ff706000 {
