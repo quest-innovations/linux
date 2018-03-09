@@ -144,7 +144,7 @@ static int quest_fx3_dma_read(unsigned int ch, u8 *buf, bool* buf_full, unsigned
 		}
 
 	} else {
-		printk("    Catching up on images lr: %d lw: %d", chan->last_read, chan->last_write);
+		// printk("    Catching up on images lr: %d lw: %d", chan->last_read, chan->last_write);
 
 		if(chan->data_ready) // If frame ready was set while not waiting for a frame, reset the flag
 			chan->data_ready = false;
@@ -166,9 +166,9 @@ static int quest_fx3_dma_read(unsigned int ch, u8 *buf, bool* buf_full, unsigned
 	//if(!dmatest_check_srcs_quest(chan->bufs[chan->last_read], chan->check_range, chan->image_size_bytes + chan->check_range, chan->bufs_size))
 	////pr_info("Buffer overrun!");
 
-	printk("GRAB - Last read: %d Last write: %d", chan->last_read, chan->last_write);
+	// printk("GRAB - Last read: %d Last write: %d", chan->last_read, chan->last_write);
 
-	printk("GRAB - Last read: %d Last write: %d", chan->bufs_raw[chan->last_read], chan->bufs_raw[chan->last_write]);
+	// printk("GRAB - Last read: %d Last write: %d", chan->bufs_raw[chan->last_read], chan->bufs_raw[chan->last_write]);
 
 	if (copy_to_user(buf, chan->bufs_user[chan->last_read], sizeBytes)) {
 		pr_info("Oops, transfer went wrong :(");
@@ -277,7 +277,7 @@ static int quest_fx3_dma_set_ch_read_size(unsigned int ch, unsigned int sizeByte
 {
 	int err;
 
-	pr_info("Ch size start %d %d %d \n", ch, sizeBytes, (int)qdma.reading);
+	// pr_info("Ch size start %d %d %d \n", ch, sizeBytes, (int)qdma.reading);
 
 	if(ch >= qdma.ch_cnt)
 		return -1;
@@ -285,14 +285,14 @@ static int quest_fx3_dma_set_ch_read_size(unsigned int ch, unsigned int sizeByte
 	if(qdma.reading)
 		quest_fx3_dma_stop_read();
 
-	pr_info("RD Ch size \n");
+	// pr_info("RD Ch size \n");
 
 	quest_fx3_dma_setreg(Control, 0); // Put DMA module in init state
 
 	if(qdma.channels[ch].bufs_size != 0)
 		quest_dma_core_destroy_buffers(dev_reg, &qdma.channels[ch]); // Needs destroying before creating
 
-	pr_info("RD Ch size \n");
+	// pr_info("RD Ch size \n");
 
 	if((err = quest_dma_core_create_buffers(dev_reg, &qdma.channels[ch], BUF_CNT, sizeBytes)) != 0)
 	{
@@ -317,7 +317,7 @@ static int quest_fx3_dma_set_ch_write_size(unsigned int ch, unsigned int sizeByt
 {
 	int err;
 
-	pr_info("Write ch size start \n");
+	// pr_info("Write ch size start \n");
 
 	if(ch >= qdma.ch_cnt)
 		return -1;
@@ -325,17 +325,17 @@ static int quest_fx3_dma_set_ch_write_size(unsigned int ch, unsigned int sizeByt
 	if(qdma.reading)
 		return -1;
 
-	pr_info("WR Ch size \n");
+	// pr_info("WR Ch size \n");
 
 	if(qdma.channels[ch].write_data_size == sizeBytes)
 		return 0; // Nothing to be done
 
-	pr_info("WR Ch size \n");
+	// pr_info("WR Ch size \n");
 
 	if(qdma.channels[ch].write_buf != 0)
 		quest_dma_core_destroy_write_buffer(dev_reg, &qdma.channels[ch]); // Needs destroying before creating
 
-	pr_info("WR Ch size \n");
+	// pr_info("WR Ch size \n");
 
 	if((err = quest_dma_core_create_write_buffer(dev_reg, &qdma.channels[ch], sizeBytes)) != 0)
 	{
@@ -350,7 +350,7 @@ static int quest_fx3_dma_start_dma(struct quest_dma_channel_struct *chan, unsign
 {
 	u32 control = 0;
 
-	pr_info("Starting dma\n");
+	// pr_info("Starting dma\n");
 
 	// TODO add return on start error
 
@@ -387,12 +387,12 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 	int err;
 	int result;
 
-	pr_info("In drive 1\n");
+	// pr_info("In drive 1\n");
 
 	if(chan->bufs_cnt < 3) // Reading process requires 3 buffers
 		return -1;
 
-	pr_info("In drive 2\n");
+	// pr_info("In drive 2\n");
 
 	if(qdma.reading) {
 		quest_fx3_dma_stop_read();
@@ -403,7 +403,7 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 
 	qdma.reading = true;
 
-	pr_info("Drive started\n");
+	// pr_info("Drive started\n");
 
 	while(!qdma.stop_reading) {
 		if(!chan->buffers_full &&
@@ -449,9 +449,9 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 			//dmatest_init_srcs_quest_single(chan->bufs[nextWrite], chan->check_range, chan->image_size_bytes, chan->bufs_size);
 
 			//pr_info("    %s Writing next phys buffer %d lazy begin(-16B): %d, lazy end (-16B): %d", __func__, chan->bufs_raw[nextWrite], chan->bufs_raw[nextWrite] - 16, chan->bufs_raw[nextWrite] + chan->data_size_bytes - 16);
-			pr_info("Old pointer: %d", quest_fx3_dma_getreg(Pointer0));
+			// pr_info("Old pointer: %d", quest_fx3_dma_getreg(Pointer0));
 			quest_fx3_dma_setreg(Pointer0, chan->bufs_raw[nextWrite]);
-			pr_info("New pointer: %d", quest_fx3_dma_getreg(Pointer0));
+			// pr_info("New pointer: %d", quest_fx3_dma_getreg(Pointer0));
 
 			// Acknowledge IRQ
 			////pr_info("    %s Acknowledge IRQ", __func__);
@@ -463,20 +463,20 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 
 			// Wait for image done to be low
 			if((status & ImageDone) | (status & Busy)) {
-				pr_info("!!!!!Image done or busy still high 1!!!!!!!!");
+				// pr_info("!!!!!Image done or busy still high 1!!!!!!!!");
 				msleep(1000); // Wait for a bit
 			}
 
 			status = quest_fx3_dma_getreg(Status);
 			// Wait for image done to be low
 			if((status & ImageDone) | (status & Busy)) {
-				pr_info("!!!!!Image done or busy still high. Control: %d Status: %d", quest_fx3_dma_getreg(Control), quest_fx3_dma_getreg(Status));
+				// pr_info("!!!!!Image done or busy still high. Control: %d Status: %d", quest_fx3_dma_getreg(Control), quest_fx3_dma_getreg(Status));
 				msleep(1); // Wait for a bit
 				quest_fx3_dma_stop_read();
 				continue;
 			}
 
-			pr_info(">>Control: %d Status: %d", quest_fx3_dma_getreg(Control), quest_fx3_dma_getreg(Status));
+			// pr_info(">>Control: %d Status: %d", quest_fx3_dma_getreg(Control), quest_fx3_dma_getreg(Status));
 
 			////pr_info("    %s Start", __func__);
 			quest_fx3_dma_setreg(Control, control | Start);
@@ -506,7 +506,7 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 
 	chan->data_ready = false;	// Reset frame ready flag
 	chan->buffers_full = false;	// Reset full flag
-	pr_info("Stopping drive grabbing");
+	// pr_info("Stopping drive grabbing");
 
 	return 0;
 }
@@ -535,34 +535,34 @@ static long quest_fx3_dma_ioctl(struct file *f, unsigned int cmd, unsigned long 
 
 		return quest_fx3_dma_write(buf.ch, buf.buf, buf.size_bytes);
 	case QDMA_STOP_READ:
-		pr_info("quest_fx3_QDMA_STOP_READ \n");
+		// pr_info("quest_fx3_QDMA_STOP_READ \n");
 		quest_fx3_dma_stop_read();
 		break;
 	case QDMA_SET_CH_READ_SIZE:
-		pr_info("quest_fx3_QDMA_SET_CH_READ_SIZE \n");
+		// pr_info("quest_fx3_QDMA_SET_CH_READ_SIZE \n");
 		if (copy_from_user(&buf, (qdma_buf_arg_t *)arg, sizeof(buf)))
 			return -EACCES;
 
 		return quest_fx3_dma_set_ch_read_size(buf.ch, buf.size_bytes);
 	case QDMA_SET_CH_WRITE_SIZE:
-		pr_info("quest_fx3_QDMA_SET_CH_WRITE_SIZE \n");
+		// pr_info("quest_fx3_QDMA_SET_CH_WRITE_SIZE \n");
 		if (copy_from_user(&buf, (qdma_buf_arg_t *)arg, sizeof(buf)))
 			return -EACCES;
 
 		return quest_fx3_dma_set_ch_write_size(buf.ch, buf.size_bytes);
 	case QDMA_DRIVE_READ:
-		pr_info("quest_fx3_QDMA_DRIVE_READ \n");
+		// pr_info("quest_fx3_QDMA_DRIVE_READ \n");
 		if (copy_from_user(&buf, (qdma_buf_arg_t *)arg, sizeof(buf)))
 			return -EACCES;
 
-		pr_info("DRIVE %d", buf.size_bytes);
+		// pr_info("DRIVE %d", buf.size_bytes);
 
 		if(buf.ch >= qdma.ch_cnt)
 			return -1;
 
 		return quest_fx3_dma_drive_read(&qdma.channels[buf.ch], buf.size_bytes);
 	case QDMA_GETREG:
-		pr_info("quest_fx3_QDMA_GETREG \n");
+		// pr_info("quest_fx3_QDMA_GETREG \n");
 		if (copy_from_user(&reg, (qdma_reg_arg_t *)arg, sizeof(reg)))
 			return -EACCES;
 
@@ -573,7 +573,7 @@ static long quest_fx3_dma_ioctl(struct file *f, unsigned int cmd, unsigned long 
 
 		return 0;
 	case QDMA_SETREG:
-		pr_info("quest_fx3_QDMA_SETREG \n");
+		// pr_info("quest_fx3_QDMA_SETREG \n");
 		if (copy_from_user(&reg, (qdma_reg_arg_t *)arg, sizeof(reg)))
 			return -EACCES;
 
@@ -662,20 +662,20 @@ static int quest_fx3_dma_probe(struct platform_device *pdev)
 	qdma.reading = false;
 	qdma.irqn = 0;
 
-	pr_info("Creating channels");
+	// pr_info("Creating channels");
 
 	if(quest_fx3_dma_create_channels() == -1)
 		return -1;
 
-	pr_info("Creating char dev");
+	// pr_info("Creating char dev");
 
 	prop = of_find_property(node, "device", NULL);
 
-	pr_info("tests %s \n", (char *)prop->value);
+	// pr_info("tests %s \n", (char *)prop->value);
 
 	char_dev_name = (char *)prop->value;
 
-	pr_info("Device create\n");
+	// pr_info("Device create\n");
 
 	// Character device creation
 	if ((ret = alloc_chrdev_region(&dev, FIRST_MINOR, MINOR_CNT, "quest_fx3_dma_ioctl")) < 0)
@@ -683,12 +683,12 @@ static int quest_fx3_dma_probe(struct platform_device *pdev)
 
 	cdev_init(&c_dev, &quest_fx3_dma_fops);
 
-	pr_info("Device create\n");
+	// pr_info("Device create\n");
 
 	if ((ret = cdev_add(&c_dev, dev, MINOR_CNT)) < 0)
 	   return ret;
 
-	pr_info("Device create\n");
+	// pr_info("Device create\n");
 
 	if (IS_ERR(cl = class_create(THIS_MODULE, "qdma_fx3"))) {
 	   cdev_del(&c_dev);
@@ -696,7 +696,7 @@ static int quest_fx3_dma_probe(struct platform_device *pdev)
 	   return PTR_ERR(cl);
 	}
 
-	pr_info("Device create\n");
+	// pr_info("Device create\n");
 
 	if (IS_ERR(dev_creation_ret = device_create(cl, NULL, dev, NULL, char_dev_name))) {
 	   class_destroy(cl);
@@ -717,7 +717,7 @@ static int quest_fx3_dma_probe(struct platform_device *pdev)
 	    return -EIO;
 	}*/
 
-	pr_info("Getting dma base\n");
+	// pr_info("Getting dma base\n");
 	reg_res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!reg_res)
 		return -ENOMEM;
@@ -771,14 +771,14 @@ static struct platform_driver quest_fx3_dma_driver = {
 
 static int __init quest_fx3_dma_init(void)
 {
-	pr_info("Hello init\n");
+	// pr_info("Hello init\n");
 	return platform_driver_register(&quest_fx3_dma_driver);
 }
 late_initcall(quest_fx3_dma_init);
 
 static void __exit quest_fx3_dma_exit(void)
 {
-	pr_info("Hello exit2\n");
+	// pr_info("Hello exit2\n");
 	platform_driver_unregister(&quest_fx3_dma_driver);
 }
 module_exit(quest_fx3_dma_exit)

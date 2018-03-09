@@ -39,12 +39,12 @@ int quest_dma_core_create_buffers(struct device *dev, struct quest_dma_channel_s
 
     //pr_info("%s Begin %d %d 1", __func__, bufs_size, bufs_cnt);
 
-    pr_info("Core, 1");
+    // pr_info("Core, 1");
 
     if(channel->bufs != 0)
 	return -1;
 
-    pr_info("Core, 2");
+    // pr_info("Core, 2");
 
     channel->bufs_cnt = buf_cnt;
     channel->data_size_bytes = buf_size;
@@ -76,7 +76,7 @@ int quest_dma_core_create_buffers(struct device *dev, struct quest_dma_channel_s
         !channel->dma_handles)
 	return -1;
 
-    pr_info("Core, 3");
+    // pr_info("Core, 3");
 
     for(; i < channel->bufs_cnt; ++i)
     {
@@ -105,7 +105,7 @@ int quest_dma_core_create_buffers(struct device *dev, struct quest_dma_channel_s
 
     //dmatest_init_srcs_quest(channel->bufs, channel->check_range, channel->data_size_bytes + channel->check_range, channel->bufs_size);
 
-    pr_info("Core, buffers created");
+    // pr_info("Core, buffers created");
 
     return 0;
 }
@@ -115,9 +115,9 @@ int quest_dma_core_create_write_buffer(struct device *dev, struct quest_dma_chan
     //u32 i = 0;
     //u32 j = 0;
 
-    pr_info("%s Begin %d", __func__, buf_size);
+    // pr_info("%s Begin %d", __func__, buf_size);
 
-    pr_info("Core, 1");
+    // pr_info("Core, 1");
 
     if(channel->write_buf != 0)
 	return -1;
@@ -137,11 +137,11 @@ int quest_dma_core_create_write_buffer(struct device *dev, struct quest_dma_chan
 
     channel->write_buf_size = channel->write_data_size + (channel->check_range * 2);
 
-    pr_info("Core, 3");
+    // pr_info("Core, 3");
 
     channel->write_buf = dma_alloc_coherent(dev, channel->write_buf_size, &channel->write_dma_handle, GFP_KERNEL);
 
-    pr_info("Still alive!");
+    // pr_info("Still alive!");
 
     if(!channel->write_buf)
     {
@@ -152,7 +152,7 @@ int quest_dma_core_create_write_buffer(struct device *dev, struct quest_dma_chan
     channel->write_buf_user = channel->write_buf + channel->check_range;
     channel->write_buf_raw = channel->write_dma_handle + channel->check_range;
 
-    pr_info("Core, write buffers created");
+    // pr_info("Core, write buffers created");
 
     return 0;
 }
@@ -188,7 +188,7 @@ int quest_dma_core_destroy_buffers(struct device *dev, struct quest_dma_channel_
     channel->bufs_size = 0;
     channel->bufs_cnt = 0;
 
-    pr_info("%s", __func__);
+    // pr_info("%s", __func__);
 
     return 0;
 }
@@ -205,7 +205,7 @@ int quest_dma_core_destroy_write_buffer(struct device *dev, struct quest_dma_cha
 
 	channel->write_buf = 0;
 
-	pr_info("%s", __func__);
+	// pr_info("%s", __func__);
 
 	return 0;
 }
