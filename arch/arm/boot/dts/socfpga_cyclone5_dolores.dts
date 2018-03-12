@@ -146,8 +146,10 @@
 	touch@4a {
 		compatible = "atmel,maxtouch";
 		reg = <0x4a>;
-		interrupt-parent = <&portb>;
-		interrupts = <22 IRQ_TYPE_EDGE_FALLING>;
+//		interrupt-parent = <&portb>; // GPIO51 touch@devboard
+//		interrupts = <22 IRQ_TYPE_EDGE_FALLING>; // GPIO51 touch@devboard
+		interrupt-parent = <&portc>; // GPIO63 touch@productionboard
+		interrupts = <5 IRQ_TYPE_EDGE_FALLING>; // GPIO63 touch@productionboard
 	};
 	isl12057: isl12057@6F {
 		compatible = "isil,isl12022";
