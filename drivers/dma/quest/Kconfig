@@ -1,6 +1,6 @@
 config QUEST_DMA
 	tristate "Quest DMA Controller"
-	depends on (ARCH_SOCFPGA || ALTERA_MSGDMA)
+	depends on ARCH_SOCFPGA
 	select DMA_ENGINE
 	help
 	  Enable support for Quest DMA control

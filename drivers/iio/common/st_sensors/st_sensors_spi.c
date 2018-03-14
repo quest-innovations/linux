@@ -34,13 +34,9 @@ static int st_sensors_spi_read(struct st_sensor_transfer_buffer *tb,
 	struct spi_transfer xfers[] = {
 		{
 			.tx_buf = tb->tx_buf,
-			.bits_per_word = 8,
-			.len = 1,
-		},
-		{
 			.rx_buf = tb->rx_buf,
 			.bits_per_word = 8,
-			.len = len,
+			.len = len + 1,
 		}
 	};
 
@@ -54,7 +50,7 @@ static int st_sensors_spi_read(struct st_sensor_transfer_buffer *tb,
 	if (err)
 		goto acc_spi_read_error;
 
-	memcpy(data, tb->rx_buf, len);
+	memcpy(data, tb->rx_buf + 1, len);
 	mutex_unlock(&tb->buf_lock);
 	return len;
 
