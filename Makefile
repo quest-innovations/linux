@@ -2,7 +2,7 @@
 VERSION = 4
 PATCHLEVEL = 14
 SUBLEVEL = 14
-EXTRAVERSION = -dolores
+EXTRAVERSION = +dolores2
 NAME = Dolores Abernathy
 
 # *DOCUMENTATION*

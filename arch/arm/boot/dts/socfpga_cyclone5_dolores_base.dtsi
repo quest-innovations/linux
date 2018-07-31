@@ -22,6 +22,15 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	soc {
+		clkmgr@ffd04000 {
+			clocks {
+				osc1 {
+					clock-frequency = <25000000>;
+				};
+			};
+		};
+	};
 
 };
 
