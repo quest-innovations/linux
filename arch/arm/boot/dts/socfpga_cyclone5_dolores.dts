@@ -32,7 +32,7 @@
 	memory {
 		name = "memory";
 		device_type = "memory";
-		reg = <0x0 0x80000000>; /* 1GB */
+		reg = <0x0 0x80000000>; /* 2GB */
 	};
 
 	aliases {
@@ -143,7 +143,7 @@
 
 &i2c0 {
 	status = "okay";
-	touch@4a {
+	touch: touch@4a {
 		compatible = "atmel,maxtouch";
 		reg = <0x4a>;
 //		interrupt-parent = <&portb>; // GPIO51 touch@devboard
