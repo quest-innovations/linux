@@ -42,4 +42,6 @@ typedef struct {
 #define QDMA_SETREG _IOW('q', 7, qdma_reg_arg_t *)
 #define QDMA_GETREG _IOR('q', 8, qdma_reg_arg_t *)
 
+#define QDMA_DRIVE_READ_STATUS _IOR('q', 9, bool *)
+
 #endif // QUEST_DMA_CORE_IOCTL_H_

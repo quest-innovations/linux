@@ -175,13 +175,19 @@ static int quest_clink_in_dma_read(unsigned int ch, u8 *buf, bool* buf_full, uns
  */
 static int quest_clink_in_dma_stop_read(void)
 {
-	u32 control = quest_clink_in_dma_getreg(Control);
+	u32 control = 0;
+
+	pr_info("quest_clink_in_dma_stop_read start");
+
+	control = quest_clink_in_dma_getreg(Control);
 	quest_clink_in_dma_setreg(Control, control & ~InitDone);
 
 	qdma.stop_reading = true;
 	wake_up_interruptible(&data_wait); // Awake process to return
 
 	quest_clink_in_dma_setreg(Control, control | InitDone);
+
+	pr_info("quest_clink_in_dma_stop_read done");
 
 	return 0;
 }
