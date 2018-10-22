@@ -65,8 +65,7 @@
 	};
 	ez_usb_dma_0: ez_usb_dma@0x000004540 {
 		compatible = "quest,qdma-fx3-1.0.0";
-		reg = <0x00000000 0x00004540 0x00000040>,
-			<0x00000000 0x00004440 0x00000040>;
+		reg = <0x00000000 0x00004540 0x00000040>;
 		clocks = <&h2f_user0_clk &h2f_user0_clk>;
 		clock-names = "clock_write", "clock_slave";
 		interrupt-parent = <&intc>;

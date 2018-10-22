@@ -17,14 +17,6 @@
 #define CH_CNT 1
 #define BUF_CNT 10
 
-void __iomem *led_base;
-
-static const u32 led_off = 0;
-static const u32 led_on = 1;
-static const u32 led_blink = 2;
-static const u32 led_blinkf = 3;
-
-
 static struct device *dev_reg;
 
 static dev_t dev;
@@ -121,8 +113,6 @@ static int quest_fx3_dma_read(unsigned int ch, u8 *buf, bool* buf_full, unsigned
 
 	//pr_info("Reading data\n");
 
-	writel(led_on, led_base + (3 * 4));
-
 	if(ch >= qdma.ch_cnt)
 		return -1;
 
@@ -191,8 +181,6 @@ static int quest_fx3_dma_read(unsigned int ch, u8 *buf, bool* buf_full, unsigned
 			return -EACCES;
 		}
 	}
-
-	writel(led_off, led_base + (3 * 4));
 
 	//pr_info("Reading done\n");
 
@@ -266,15 +254,11 @@ static int quest_fx3_dma_write(unsigned int ch, u8 *buf, unsigned int sizeBytes)
 static int quest_fx3_dma_stop_read(void)
 {
 	u32 control = 0;
-	//printk("Doing the stop");
-
-	writel(led_off, led_base + (4 * 4));
 
 	control = quest_fx3_dma_getreg(Control);
 	quest_fx3_dma_setreg(Control, control & ~InitDone);
 
 	if(qdma.reading) {
-		writel(led_blink, led_base + (4 * 4));
 		qdma.stop_reading = true;
 		wake_up_interruptible(&data_wait); // Awake process to return
 		usleep_range(50, 100); // Wait for process to return if another process was grabbing
@@ -282,8 +266,6 @@ static int quest_fx3_dma_stop_read(void)
 	}
 
 	quest_fx3_dma_setreg(Control, control | InitDone);
-
-	printk("Did the stop");
 
 	return 0;
 }
@@ -370,8 +352,6 @@ static int quest_fx3_dma_start_dma(struct quest_dma_channel_struct *chan, unsign
 {
 	u32 control = 0;
 
-	writel(led_on, led_base + (4 * 4));
-
 	//pr_info("Starting dma\n");
 
 	// TODO add return on start error
@@ -410,7 +390,6 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 	int result;
 
 	// pr_info("In drive 1\n");
-	writel(led_on, led_base + (2 * 4));
 
 	if(chan->bufs_cnt < 3) // Reading process requires 3 buffers
 		return -1;
@@ -432,7 +411,6 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 		if(!chan->buffers_full &&
 		        quest_fx3_dma_getreg(Status) & ImageDone) {
 			//pr_info("Data received!");
-			writel(led_on, led_base + (2 * 4));
 
 			prevLastWrite = chan->last_write;
 
@@ -507,7 +485,6 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 
 			wake_up_interruptible(&data_wait);
 		} else {
-			writel(led_blinkf, led_base + (2 * 4));
 			usleep_range(100, 200);
 		}
 	}
@@ -515,9 +492,7 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 	wake_up_interruptible(&data_wait); // Awake process to return
 
 	if(qdma.in_read == true) {
-		writel(led_blink, led_base + (2 * 4));
-
-		printk("GW   - Waiting for next image");
+		//printk("GW   - Waiting for next image");
 		result = wait_event_interruptible(data_wait, qdma.stop_reading_acq);
 
 		if(qdma.stop_reading_acq) {
@@ -528,16 +503,12 @@ static int quest_fx3_dma_drive_read(struct quest_dma_channel_struct *chan, unsig
 		}
 	}
 
-	writel(led_blinkf, led_base + (4 * 4));
-
 	qdma.stop_reading = false;    // Reset stop flag
 	qdma.reading = false;
 
 	chan->data_ready = false;	// Reset frame ready flag
 	chan->buffers_full = false;	// Reset full flag
 	//pr_info("Stopping drive grabbing");
-
-	writel(led_off, led_base + (2 * 4));
 
 	return 0;
 }
@@ -764,19 +735,11 @@ static int quest_fx3_dma_probe(struct platform_device *pdev)
 	if (!reg_res)
 		return -ENOMEM;
 
-	led_base = devm_ioremap_resource(dev_reg, reg_res);
-
-	writel(led_off, led_base + (2 * 4));
-	writel(led_off, led_base + (3 * 4));
-	writel(led_off, led_base + (4 * 4));
-
 	if (IS_ERR(qdma.base_addr)) {
 		dev_err(dev_reg, "devm_ioremap_resource failed\n");
 		//retval = PTR_ERR(qcdma.sensor_dma_base);
 		return -ENOMEM;
 	}
-
-	printk("ledbase = %x" , (u32)led_base);
 
 	pr_info("INIT DONE %d %d", (u32)qdma.base_addr, quest_fx3_dma_getreg(0));
 
