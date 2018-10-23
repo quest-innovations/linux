@@ -731,10 +731,6 @@ static int quest_fx3_dma_probe(struct platform_device *pdev)
 
 	qdma.base_addr = devm_ioremap_resource(dev_reg, reg_res);
 
-	reg_res = platform_get_resource(pdev, IORESOURCE_MEM, 1);
-	if (!reg_res)
-		return -ENOMEM;
-
 	if (IS_ERR(qdma.base_addr)) {
 		dev_err(dev_reg, "devm_ioremap_resource failed\n");
 		//retval = PTR_ERR(qcdma.sensor_dma_base);
