@@ -5332,6 +5332,15 @@ L:	dri-devel@lists.freedesktop.org
 F:	include/drm/ttm/
 F:	drivers/gpu/drm/ttm/
 
+DRM INTEL IVIP
+M:	Hean Loong, Ong <han.loong.ong@intel.com>
+L:      dri-devel@lists.freedesktop.org
+T:      git git://anongit.freedesktop.org/drm/drm-misc
+S:	Maintained
+F:	intel_vip_conn.c
+F:	intel_vip_drv.c
+F: 	intel_vip_drv.h
+
 DSBR100 USB FM RADIO DRIVER
 M:	Alexey Klimov <klimov.linux@gmail.com>
 L:	linux-media@vger.kernel.org
