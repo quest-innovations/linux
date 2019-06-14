@@ -2,8 +2,8 @@
 VERSION = 5
 PATCHLEVEL = 1
 SUBLEVEL = 9
-EXTRAVERSION =
-NAME = Shy Crocodile
+EXTRAVERSION = +bernard1
+NAME = Bernard Lowe
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
