@@ -1,0 +1,107 @@
+/*
+ *  Copyright (C) 2018 Quest Innovations <www.quest-innovations.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/dts-v1/;
+#include "socfpga_arria10_bernard_base.dtsi"
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	model = "Custom project Quest Bernard";
+	compatible = "quest,bernard", "altr,socfpga-arria10", "altr,socfpga";
+
+	chosen {
+		bootargs = "earlyprintk debug console=ttyAL0,115200";
+	};
+
+	gpiokeys {
+		compatible = "gpio-keys";
+		power_button {
+			label = "Power Button";
+			gpios = <&gpio3 4 GPIO_ACTIVE_LOW>;
+			//linux,code = <KEY_A>;
+			linux,code = <KEY_POWER>;
+			linux,can-disable;
+			status = "okay";
+		};
+		
+	};
+	gpio-poweroff {
+		compatible = "gpio-poweroff";
+		gpios = <&gpio3 8 GPIO_ACTIVE_LOW>;
+			status = "okay";
+	};
+};
+
+&spi0 {
+
+	spidev@0 {
+		compatible = "spidev";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		status = "disabled";
+	};
+};
+
+&uart1 {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&uart3 {
+	status = "okay";
+};
+
+&uart4 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+};
+
+&watchdog1 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&framebuffer0 {
+	status = "okay";
+};
+
+&pannel_0 {
+	status = "okay";
+};
+
+&framebuffer1 {
+	status = "okay";
+};
+
+&pannel_1 {
+	status = "okay";
+};

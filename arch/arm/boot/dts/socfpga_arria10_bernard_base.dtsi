@@ -1,0 +1,287 @@
+/*
+ *  Copyright (C) 2018 Quest Innovations <www.quest-innovations.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/dts-v1/;
+
+#include "socfpga_arria10_rxc.dtsi"
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {	
+	model = "Custom project Quest Bernard";
+	compatible = "altr,socfpga-arria10", "altr,socfpga";
+
+	aliases {
+		ethernet0 = &gmac0;
+		serial0 = &uart1;
+	};
+
+
+	memory@0 {
+		name = "memory";
+		device_type = "memory";
+		reg = <0x0 0x80000000>; /* 2GB */
+	};
+
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		pcie_0_clk_100: pcie_0_clk_100 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <100000000>;	/* 100,00 MHz */
+			clock-output-names = "pcie_0_clk_100-clk";
+		}; //end f2h_hp_clk (f2h_hp_clk)
+
+		h2f_hp_clk: h2f_hp_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <125000000>;	/* 125,00 MHz */
+			clock-output-names = "h2f_hp_clk-clk";
+		}; //end h2f_hp_clk (h2f_hp_clk)
+
+		h2f_lw_clk: h2f_lw_clk {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <125000000>;	/* 125,00 MHz */
+			clock-output-names = "h2f_lw_clk-clk";
+		}; //end h2f_lw_clk (h2f_lw_clk)
+	};
+
+
+
+	somleds {
+		compatible = "gpio-leds";
+
+		a10sr_led0 {
+			label = "som-led0";
+			gpios = <&gpio5 0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "hartbeat";
+		};
+
+		a10sr_led1 {
+			label = "som-led1";
+			gpios = <&gpio5 1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "panic";
+		};
+	};
+
+	soc {
+		framebuffer0: framebuffer@0xff206C00 {
+			status = "disabled";
+			compatible = "altr,vip-frame-buffer-2.0";
+			reg = <0xff206C00 0x00000040>;
+			altr,max-width = <800>;
+			altr,max-height = <480>;
+			altr,mem-port-width = <128>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@1 {
+					reg = <1>;
+					fb_output0: endpoint {
+						remote-endpoint = <&pannel_0>;
+					};
+				};
+			};
+		};
+
+		framebuffer1: framebuffer@0xff206000 {
+			status = "disabled";
+			compatible = "altr,vip-frame-buffer-2.0";
+			reg = <0xff206000 0x00000040>;
+			altr,max-width = <800>;
+			altr,max-height = <600>;
+			altr,mem-port-width = <128>;
+
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@1 {
+					reg = <1>;
+					fb_output1: endpoint {
+						remote-endpoint = <&pannel_1>;
+					};
+				};
+			};
+		};
+
+		gpio3: gpio@0xff206040 {
+			status = "disabled";
+			compatible = "altr,pio-1.0";
+			reg = <0xff206040 0x00000010>;
+			clocks = <&h2f_lw_clk>;
+			altr,ngpio = <32>;
+			altr,interrupt-type = <3>;
+			edge_type = <2>;
+			#gpio-cells = <2>;
+			gpio-controller;
+			interrupt-controller;
+			interrupt-parent = <&intc>;
+			#interrupt-cells = <1>;
+			interrupts = <0 28 IRQ_TYPE_LEVEL_HIGH>; // irq9
+		};
+
+		gpio5: gpio@0xff207000 {
+			status = "disabled";
+			compatible = "altr,pio-1.0";
+			reg = <0xff207000 0x00000010>;
+			clocks = <&h2f_lw_clk>;
+			altr,ngpio = <2>;
+			altr,interrupt-type = <3>;
+			#gpio-cells = <2>;
+			gpio-controller;
+		};
+
+		uart2: serial@0xff206440 {
+			status = "disabled";
+			compatible = "altr,uart-1.0";
+			clocks = <&h2f_lw_clk>;
+			clock-frequency = <75000000>;
+			reg = <0xff206440 0x20>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 20 IRQ_TYPE_LEVEL_HIGH>; // irq1
+			current-speed = <57600>;
+		};
+
+		uart3: serial@0xff206460 {
+			status = "disabled";
+			compatible = "altr,uart-1.0";
+			clocks = <&h2f_lw_clk>;
+			clock-frequency = <75000000>;
+			reg = <0xff206460 0x20>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 26 IRQ_TYPE_LEVEL_HIGH>; // irq7
+			current-speed = <57600>;
+		};
+
+		uart4: serial@0xff206480 {
+			status = "disabled";
+			compatible = "altr,uart-1.0";
+			clocks = <&h2f_lw_clk>;
+			clock-frequency = <75000000>;
+			reg = <0xff206480 0x20>;
+			interrupt-parent = <&intc>;
+			interrupts = <0 29 IRQ_TYPE_LEVEL_HIGH>; // irq10
+			current-speed = <57600>;
+		};
+
+		spi0: spi@ffda4000 {
+			compatible = "snps,dw-apb-ssi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xffda4000 0x100>;
+			interrupts = <0 101 4>;
+			num-chipselect = <4>;
+			bus-num = <0>;
+			/*32bit_access;*/
+			tx-dma-channel = <&pdma 16>;
+			rx-dma-channel = <&pdma 17>;
+			clocks = <&spi_m_clk>;
+			status = "okay";
+		};
+
+
+		pcie_0_pcie_a10_hip_avmm: pcie@0xd0000000 {
+			status = "okay";
+			compatible = "altr,pcie-root-port-16.1", "altr,pcie-root-port-1.0";
+			reg = <0xd0000000 0x10000000>,
+				<0xff210000 0x00004000>;
+			reg-names = "Txs", "Cra";
+			interrupt-parent = <&intc>;
+			interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>; // irq6
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			device_type = "pci";	/* embeddedsw.dts.params.device_type type STRING */
+//			bus-range = <0x00000000 0x000000ff>;
+			bus-ranges = <0 0>;
+			ranges = <0x83000000 0x00000000 0x00000000 0xd0000000 0x00000000 0x10000000>;
+			msi-parent = <&pcie_0_msi_to_gic_gen_0>;
+			#address-cells = <3>;
+			#size-cells = <2>;
+			interrupt-map-mask = <0 0 0 7>;
+			interrupt-map = <0 0 0 1 &pcie_0_pcie_a10_hip_avmm 1>,
+				<0 0 0 2 &pcie_0_pcie_a10_hip_avmm 2>,
+				<0 0 0 3 &pcie_0_pcie_a10_hip_avmm 3>,
+				<0 0 0 4 &pcie_0_pcie_a10_hip_avmm 4>;
+		}; //end pcie@0x010000000 (pcie_0_pcie_a10_hip_avmm)
+		
+		pcie_0_msi_to_gic_gen_0: msi@0xff214080 {
+			status = "okay";
+			compatible = "altr,msi-1.0", "altr,msi-1.0";
+			reg = <0xff214080 0x00000010>,
+				<0xff214000 0x00000080>;
+			reg-names = "csr", "vector_slave";
+			num-vectors = <32>;	/* embeddedsw.dts.params.num-vectors type NUMBER */
+			interrupt-parent = <&intc>;
+			interrupts = <0 24 IRQ_TYPE_LEVEL_HIGH>; // irq5
+			clocks = <&h2f_lw_clk>;
+			msi-controller = <1>;	/* embeddedsw.dts.params.msi-controller type NUMBER */
+		}; //end msi@0x100014080 (pcie_0_msi_to_gic_gen_0)
+		
+
+	};
+
+	pannel_0: panel {
+		status = "disabled";
+		//compatible = "dvi-connector";
+		compatible = "nhd,nhd-5-800480tf-atxi-ctp";
+		//compatible = "ampire,am800480r3tmqwa1h";
+		power-supply = <&regulator_3_3v>;
+	};
+
+	pannel_1: panel {
+		status = "disabled";
+		//compatible = "dvi-connector";
+		compatible = "auo,g104sn02";
+		//compatible = "ampire,am800480r3tmqwa1h";
+		power-supply = <&regulator_3_3v>;
+	};
+	
+	regulator_3_3v: vcc3p3-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "VCC3P3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+	};
+};
+
+&i2c0 {
+	emptyfifo_hold_master = <1>;
+	status = "okay";	
+	speed-mode = <0>;
+	clock-frequency = <100000>;
+	i2c-sda-falling-time-ns = <6000>;
+	i2c-scl-falling-time-ns = <6000>;
+	
+	focaltech@38 {
+		compatible = "edt,edt-ft5406", "edt,edt-ft5x06";
+		reg = <0x38>;
+		//pinctrl-names = "default";
+		//pinctrl-0 = <&edt_ft5x06_pins>;
+		interrupt-parent = <&intc>;
+		interrupts = <0 51 IRQ_TYPE_LEVEL_HIGH>;
+		//reset-gpios = <&gpio2 6 GPIO_ACTIVE_LOW>;
+		//wake-gpios = <&gpio3 0 0>;
+	        touchscreen-size-x = <800>;
+		touchscreen-size-y = <480>;
+	};
+};

@@ -1,0 +1,165 @@
+/*
+ * Copyright (C) 2018 Rienk de Jong <rienk@rienkdejong.nl>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#include "socfpga_arria10.dtsi"
+
+/ {
+	model = "REFLEX CES Arria 10 SoC SOM";
+	compatible = "altr,socfpga-arria10", "altr,socfpga";
+
+	aliases {
+		ethernet1 = &gmac1;
+		ethernet2 = &gmac2;
+		serial0 = &uart0;
+
+	
+	};
+
+	memory@0 {
+		name = "memory";
+		device_type = "memory";
+		reg = <0x0 0x80000000>; /* 3GB (was 0x4...) */
+	};
+
+	soc {
+		clkmgr@ffd04000 {
+			clocks {
+				osc1 {
+					clock-frequency = <25000000>;	/* 25,00 MHz */
+				};
+				f2s_free_clk {
+					clock-frequency = <200000000>;	/* 200,00 MHz */
+				};
+				cb_intosc_hs_div2_clk {
+					clock-frequency = <0>;	/* 0,00 Hz */
+				};
+				cb_intosc_ls_clk {
+					clock-frequency = <60000000>;	/* 60,00 MHz */
+				};
+			};
+		};
+	};
+};
+
+
+&gmac1 {
+	status = "okay";
+	address-bits = <48>;
+	max-frame-size = <3800>;
+	local-mac-address = [00 00 00 00 00 00];
+	phy-mode = "rgmii";	
+	phy-addr = <0xffffffff>;	
+	txd0-skew-ps = <0>;
+	txd1-skew-ps = <0>;
+	txd2-skew-ps = <0>;
+	txd3-skew-ps = <0>;
+	rxd0-skew-ps = <420>;
+	rxd1-skew-ps = <420>;
+	rxd2-skew-ps = <420>;
+	rxd3-skew-ps = <420>;
+	txen-skew-ps = <0>;
+	txc-skew-ps = <1860>;
+	rxdv-skew-ps = <420>;
+	rxc-skew-ps = <1680>;
+};
+
+
+&gmac2 {
+	status = "okay";
+	address-bits = <48>;
+	max-frame-size = <3800>;
+	local-mac-address = [00 00 00 00 00 00];
+	phy-mode = "rgmii";	
+	phy-addr = <0xffffffff>;	
+	txd0-skew-ps = <0>;
+	txd1-skew-ps = <0>;
+	txd2-skew-ps = <0>;
+	txd3-skew-ps = <0>;
+	rxd0-skew-ps = <420>;
+	rxd1-skew-ps = <420>;
+	rxd2-skew-ps = <420>;
+	rxd3-skew-ps = <420>;
+	txen-skew-ps = <0>;
+	txc-skew-ps = <1860>;
+	rxdv-skew-ps = <420>;
+	rxc-skew-ps = <1680>;
+};
+
+
+&i2c0 {
+	status = "okay";
+	speed-mode = <0>;
+	clock-frequency = <100000>;	
+	i2c-sda-falling-time-ns = <6000>;
+	i2c-scl-falling-time-ns = <6000>;	
+
+	tempsensor: ti,tmp102@48 {
+		compatible = "ti,tmp102";
+		reg = <0x00000048>;
+	};
+
+	rtc: nxp,pcf8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x00000051>;
+	};
+
+	eeprom: uc,at24@54 {
+		compatible = "uc,at24";
+		reg = <0x00000054>;
+		bytelen = <256>;
+		pagesize = <16>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&usb1 {
+	status = "okay";
+	dev-nperio-tx-fifo-size = <4096>;
+	dev-perio-tx-fifo-size = "<512 512 512 512 512 512 512 512 512 512 512 512 512 512 512>";
+	dev-rx-fifo-size = <512>;	
+	dev-tx-fifo-size = "<512 512 512 512 512 512 512 512 512 512 512 512 512 512 512>";
+	dma-mask = <268435455>;	
+	enable-dynamic-fifo = <1>;
+	host-nperio-tx-fifo-size = <2560>;
+	host-perio-tx-fifo-size = <2560>;
+	host-rx-fifo-size = <2560>;
+	ulpi-ddr = <0>;
+	voltage-switch = <0>;
+};
+
+
+&mmc {
+	status = "okay";
+	num-slots = <1>;
+	cap-sd-highspeed;
+	broken-cd;
+	bus-width = <4>;
+};
+
+&eccmgr {
+	sdmmca-ecc@ff8c2c00 {
+		compatible = "altr,socfpga-sdmmc-ecc";
+		reg = <0xff8c2c00 0x400>;
+		altr,ecc-parent = <&mmc>;
+		interrupts = <15 IRQ_TYPE_LEVEL_HIGH>,
+			     <47 IRQ_TYPE_LEVEL_HIGH>,
+			     <16 IRQ_TYPE_LEVEL_HIGH>,
+			     <48 IRQ_TYPE_LEVEL_HIGH>;
+	};
+};
