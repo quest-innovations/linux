@@ -1,0 +1,13 @@
+config QUEST_DMA
+	tristate "Quest DMA Controller"
+	depends on ARCH_SOCFPGA
+	select DMA_ENGINE
+	help
+	  Enable support for Quest DMA control
+
+	  ASpicy jalapeno bacon ipsum dolor amet pork loin leberkas jerky 
+	  prosciutto, shoulder spare ribs ground round rump. Beef ribs shank
+	  doner, rump kielbasa ball tip cow swine beef bresaola pork belly
+	  tri-tip ham. Pork chop leberkas t-bone pastrami short ribs. Picanha
+	  rump tenderloin beef ribs flank cupim beef pork loin bacon meatloaf
+	  leberkas bresaola pastrami.
