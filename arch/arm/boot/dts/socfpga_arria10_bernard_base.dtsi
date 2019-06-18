@@ -204,7 +204,7 @@
 			status = "okay";
 			compatible = "altr,pcie-root-port-16.1", "altr,pcie-root-port-1.0";
 			reg = <0xd0000000 0x10000000>,
-				<0xff210000 0x00004000>;
+				<0xff200000 0x00004000>;
 			reg-names = "Txs", "Cra";
 			interrupt-parent = <&intc>;
 			interrupts = <0 25 IRQ_TYPE_LEVEL_HIGH>; // irq6
@@ -224,11 +224,11 @@
 				<0 0 0 4 &pcie_0_pcie_a10_hip_avmm 4>;
 		}; //end pcie@0x010000000 (pcie_0_pcie_a10_hip_avmm)
 		
-		pcie_0_msi_to_gic_gen_0: msi@0xff214080 {
+		pcie_0_msi_to_gic_gen_0: msi@0xff204080 {
 			status = "okay";
 			compatible = "altr,msi-1.0", "altr,msi-1.0";
-			reg = <0xff214080 0x00000010>,
-				<0xff214000 0x00000080>;
+			reg = <0xff204080 0x00000010>,
+				<0xff204000 0x00000080>;
 			reg-names = "csr", "vector_slave";
 			num-vectors = <32>;	/* embeddedsw.dts.params.num-vectors type NUMBER */
 			interrupt-parent = <&intc>;
