@@ -17,7 +17,7 @@
 
 /dts-v1/;
 
-#include "socfpga_arria10_rxc.dtsi"
+#include "socfpga_arria10_rxc.dts"
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/gpio/gpio.h>
 

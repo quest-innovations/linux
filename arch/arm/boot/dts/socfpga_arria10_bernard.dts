@@ -44,7 +44,7 @@
 	gpio-poweroff {
 		compatible = "gpio-poweroff";
 		gpios = <&gpio3 8 GPIO_ACTIVE_LOW>;
-			status = "okay";
+		status = "okay";
 	};
 };
 
@@ -54,12 +54,14 @@
 		compatible = "spidev";
 		reg = <0>;
 		spi-max-frequency = <1000000>;
-		status = "disabled";
+		status = "okay";
+		spi-cpha;
 	};
 };
 
 &uart1 {
 	status = "okay";
+	cts-override;
 };
 
 &uart2 {

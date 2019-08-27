@@ -14,6 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+/dts-v1/;
 #include "socfpga_arria10.dtsi"
 
 / {
@@ -27,6 +29,11 @@
 
 	
 	};
+
+	chosen {
+		bootargs = "earlyprintk debug console=ttyS0,115200";
+	};
+
 
 	memory@0 {
 		name = "memory";
