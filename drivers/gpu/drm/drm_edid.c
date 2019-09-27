@@ -4848,6 +4848,8 @@ void drm_set_preferred_mode(struct drm_connector *connector,
 	struct drm_display_mode *mode;
 
 	list_for_each_entry(mode, &connector->probed_modes, head) {
+		printk("mode size: %d x %d", mode->hdisplay, mode->vdisplay);
+		printk("pref size: %d x %d", hpref, vpref);
 		if (mode->hdisplay == hpref &&
 		    mode->vdisplay == vpref)
 			mode->type |= DRM_MODE_TYPE_PREFERRED;
