@@ -86,8 +86,8 @@
 			status = "disabled";
 			compatible = "altr,vip-frame-buffer-2.0";
 			reg = <0xff206C00 0x00000040>;
-			altr,max-width = <800>;
-			altr,max-height = <480>;
+			altr,max-width = <1280>;
+			altr,max-height = <800>;
 			altr,mem-port-width = <128>;
 
 			ports {
@@ -107,8 +107,8 @@
 			status = "disabled";
 			compatible = "altr,vip-frame-buffer-2.0";
 			reg = <0xff206000 0x00000040>;
-			altr,max-width = <800>;
-			altr,max-height = <600>;
+			altr,max-width = <1920>;
+			altr,max-height = <200>;
 			altr,mem-port-width = <128>;
 
 			ports {
@@ -118,7 +118,7 @@
 				port@1 {
 					reg = <1>;
 					fb_output1: endpoint {
-						remote-endpoint = <&pannel_1>;
+						remote-endpoint = <&pannel_2>;
 					};
 				};
 			};
@@ -240,12 +240,37 @@
 
 	};
 
+//	pannel_0: panel {
+//		status = "disabled";
+//		//compatible = "dvi-connector";
+//		compatible = "dvi-connector";
+//		//compatible = "nhd,nhd-5-800480tf-atxi-ctp";
+//		//compatible = "ampire,am800480r3tmqwa1h";
+//		power-supply = <&regulator_3_3v>;
+//	};
+//
+
 	pannel_0: panel {
 		status = "disabled";
-		//compatible = "dvi-connector";
-		compatible = "nhd,nhd-5-800480tf-atxi-ctp";
-		//compatible = "ampire,am800480r3tmqwa1h";
-		power-supply = <&regulator_3_3v>;
+		compatible = "panel-lvds";
+
+		width-mm = <261>;
+		height-mm = <136>;
+
+		data-mapping = "vesa-24";
+
+		panel-timing {
+			/* 1280x800 @60Hz */
+			clock-frequency = <71000000>;
+			hactive = <1280>;
+			vactive = <800>;
+			hsync-len = <70>;
+			hfront-porch = <20>;
+			hback-porch = <70>;
+			vsync-len = <5>;
+			vfront-porch = <3>;
+			vback-porch = <15>;
+		};
 	};
 
 	pannel_1: panel {
@@ -255,6 +280,30 @@
 		//compatible = "ampire,am800480r3tmqwa1h";
 		power-supply = <&regulator_3_3v>;
 	};
+
+	pannel_2: panel {
+		status = "disabled";
+		compatible = "panel-lvds";
+
+		width-mm = <192>;
+		height-mm = <20>;
+
+		data-mapping = "vesa-24";
+
+		panel-timing {
+			/* 1920x200 @30Hz */
+			clock-frequency = <14400000>;
+			hactive = <1920>;
+			vactive = <200>;
+			hsync-len = <15>;
+			hfront-porch = <15>;
+			hback-porch = <50>;
+			vsync-len = <20>;
+			vfront-porch = <10>;
+			vback-porch = <10>;
+		};
+	};
+	
 	
 	regulator_3_3v: vcc3p3-regulator {
 		compatible = "regulator-fixed";
@@ -269,8 +318,8 @@
 	status = "okay";	
 	speed-mode = <0>;
 	clock-frequency = <100000>;
-	i2c-sda-falling-time-ns = <6000>;
-	i2c-scl-falling-time-ns = <6000>;
+	i2c-sda-falling-time-ns = <800>;
+	i2c-scl-falling-time-ns = <800>;
 	
 	focaltech@38 {
 		compatible = "edt,edt-ft5406", "edt,edt-ft5x06";
@@ -284,4 +333,12 @@
 	        touchscreen-size-x = <800>;
 		touchscreen-size-y = <480>;
 	};
+	eeprom@50 {
+		compatible = "atmel,24c2048";
+		reg = <0x50>;
+		status = "disabled";
+		pagesize = <8>;
+		address-width = <16>;
+		size = <256>;
+    	};
 };
