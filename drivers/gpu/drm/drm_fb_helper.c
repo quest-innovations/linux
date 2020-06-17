@@ -1968,7 +1968,6 @@ static int drm_fb_helper_single_fb_probe(struct drm_fb_helper *fb_helper,
 			 sizes.surface_bpp, best_depth);
 		sizes.surface_depth = best_depth;
 	}
-	DRM_INFO("fb_helper crtc_count = %d", fb_helper->crtc_count);
 
 	crtc_count = 0;
 	for (i = 0; i < fb_helper->crtc_count; i++) {
@@ -1984,14 +1983,8 @@ static int drm_fb_helper_single_fb_probe(struct drm_fb_helper *fb_helper,
 		desired_mode = fb_helper->crtc_info[i].desired_mode;
 		mode_set = &fb_helper->crtc_info[i].mode_set;
 
-
 		if (!desired_mode)
-		{
-			DRM_INFO("Is NOT desired_mode");
 			continue;
-		}
-
-		DRM_INFO("Desired mode = %d x %d", desired_mode->hdisplay , desired_mode->vdisplay);
 
 		crtc_count++;
 
@@ -2023,7 +2016,6 @@ static int drm_fb_helper_single_fb_probe(struct drm_fb_helper *fb_helper,
 
 	if (crtc_count == 0 || sizes.fb_width == -1 || sizes.fb_height == -1) {
 		DRM_INFO("Cannot find any crtc or sizes\n");
-		DRM_INFO("count = %d, width = %d, height = %d",crtc_count, sizes.fb_width , sizes.fb_height);
 
 		/* First time: disable all crtc's.. */
 		if (!fb_helper->deferred_setup && !READ_ONCE(fb_helper->dev->master))
@@ -3243,21 +3235,17 @@ static int drm_fbdev_client_hotplug(struct drm_client_dev *client)
 
 	drm_fb_helper_prepare(dev, fb_helper, &drm_fb_helper_generic_funcs);
 
-	printk("drm_fb_helper_init");
 	ret = drm_fb_helper_init(dev, fb_helper, dev->mode_config.num_connector);
 	if (ret)
 		goto err;
 
-	printk("drm_fb_helper_single_add_all_connectors");
 	ret = drm_fb_helper_single_add_all_connectors(fb_helper);
 	if (ret)
 		goto err_cleanup;
 
-	printk("drm_fb_helper_initial_config");
 	if (!drm_drv_uses_atomic_modeset(dev))
 		drm_helper_disable_unused_functions(dev);
 
-	printk("drm_fb_helper_initial_config");
 	ret = drm_fb_helper_initial_config(fb_helper, fb_helper->preferred_bpp);
 	if (ret)
 		goto err_cleanup;
@@ -3335,7 +3323,6 @@ int drm_fbdev_generic_setup(struct drm_device *dev, unsigned int preferred_bpp)
 		preferred_bpp = 32;
 	fb_helper->preferred_bpp = preferred_bpp;
 
-	printk("drm_fbdev_client_hotplug");
 	ret = drm_fbdev_client_hotplug(&fb_helper->client);
 	if (ret)
 		DRM_DEV_DEBUG(dev->dev, "client hotplug ret=%d\n", ret);

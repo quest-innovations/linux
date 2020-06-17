@@ -23,7 +23,6 @@
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_crtc_helper.h>
 #include <drm/drm_device.h>
-#include <drm/drm_modes.h>
 #include <drm/drm_encoder_slave.h>
 #include <drm/drm_plane_helper.h>
 #include <drm/drm_probe_helper.h>
@@ -52,35 +51,10 @@ static const struct drm_connector_funcs intelvipfb_drm_connector_funcs = {
 static int intelvipfb_drm_connector_get_modes(struct drm_connector *connector)
 {
 	struct drm_device *drm = connector->dev;
-//	struct intelvipfb_priv *priv = dev_get_drvdata(drm->dev);
-	int count = -1;
-	int clock = 25000;	/* in kHz */
-	int hdisplay = drm->mode_config.max_width;
-	int hsync_start = hdisplay + 10;
-	int hsync_end = hsync_start + 10;
-	int htotal = hsync_start + 5;
-	int hskew = 0;
-	int vdisplay = drm->mode_config.max_height;
-	int vsync_start = vdisplay + 3;
-	int vsync_end = vsync_start + 3;
-	int vtotal = vsync_end + 3;
-	int vscan = 0;
-	struct drm_display_mode mode[] = { 
-		{ }, 
-		{DRM_MODE("Quest custom", DRM_MODE_TYPE_DRIVER, clock, hdisplay, hsync_start,
-			hsync_end, htotal, hskew, vdisplay, vsync_start, vsync_end, vtotal, vscan,
-			DRM_MODE_FLAG_NHSYNC | DRM_MODE_FLAG_NVSYNC)},
-	};
-	const struct drm_display_mode *ptr = &mode[1];
-	struct drm_display_mode *nmode;
+	int count;
 
-	nmode = drm_mode_duplicate(drm, ptr);
-		if (nmode) {
-			drm_mode_probed_add(connector, nmode);
-			count = 1;
-		}
-
-
+	count = drm_add_modes_noedid(connector, drm->mode_config.max_width,
+			drm->mode_config.max_height);
 	drm_set_preferred_mode(connector, drm->mode_config.max_width,
 			drm->mode_config.max_height);
 	return count;
@@ -102,7 +76,6 @@ intelvipfb_conn_setup(struct drm_device *drm)
 		return NULL;
 
 	drm_connector_helper_add(conn, &intelvipfb_drm_connector_helper_funcs);
-
 	ret = drm_connector_init(drm, conn, &intelvipfb_drm_connector_funcs,
 			DRM_MODE_CONNECTOR_DisplayPort);
 	if (ret < 0) {
