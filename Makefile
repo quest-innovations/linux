@@ -2,7 +2,7 @@
 VERSION = 5
 PATCHLEVEL = 1
 SUBLEVEL = 10
-EXTRAVERSION = +bernard1-rc2
+EXTRAVERSION = +bernard1-rc3
 NAME = Bernard Lowe
 
 # *DOCUMENTATION*

@@ -51,14 +51,14 @@
 		h2f_hp_clk: h2f_hp_clk {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = <156250000>;	/* 156.25MHz */
+			clock-frequency = <200000000>;	/* 200.00MHz */
 			clock-output-names = "h2f_hp_clk-clk";
 		}; //end h2f_hp_clk (h2f_hp_clk)
 
 		h2f_lw_clk: h2f_lw_clk {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = <156250000>;	/* 156.25MHz */
+			clock-frequency = <200000000>;	/* 200.00MHz */
 			clock-output-names = "h2f_lw_clk-clk";
 		}; //end h2f_lw_clk (h2f_lw_clk)
 	};
